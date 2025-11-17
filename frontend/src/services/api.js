@@ -1,0 +1,124 @@
+import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+
+const axiosInstance = axios.create({
+  baseURL: API_URL,
+  withCredentials: true,
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
+const api = {
+  // Auth
+  async loginWithGoogle(token) {
+    const response = await axiosInstance.post('/auth/google', { token });
+    return response.data.user;
+  },
+
+  async getCurrentUser() {
+    const response = await axiosInstance.get('/auth/me');
+    return response.data;
+  },
+
+  async logout() {
+    const response = await axiosInstance.post('/auth/logout');
+    return response.data;
+  },
+
+  async checkAuthStatus() {
+    const response = await axiosInstance.get('/auth/status');
+    return response.data;
+  },
+
+  // Causes
+  async getCauses() {
+    const response = await axiosInstance.get('/causes');
+    return response.data;
+  },
+
+  async getMostActiveCauses(limit = 10) {
+    const response = await axiosInstance.get(`/causes/most-active?limit=${limit}`);
+    return response.data;
+  },
+
+  async getCause(id) {
+    const response = await axiosInstance.get(`/causes/${id}`);
+    return response.data;
+  },
+
+  async createCause(data) {
+    const response = await axiosInstance.post('/causes', data);
+    return response.data;
+  },
+
+  async updateCause(id, data) {
+    const response = await axiosInstance.put(`/causes/${id}`, data);
+    return response.data;
+  },
+
+  async deleteCause(id) {
+    const response = await axiosInstance.delete(`/causes/${id}`);
+    return response.data;
+  },
+
+  async supportCause(id, interval = 1) {
+    const response = await axiosInstance.post(`/causes/${id}/support`, { interval });
+    return response.data;
+  },
+
+  async unsupportCause(id) {
+    const response = await axiosInstance.post(`/causes/${id}/unsupport`);
+    return response.data;
+  },
+
+  async updateStepDistribution(id, interval) {
+    const response = await axiosInstance.put(`/causes/${id}/distribution`, { interval });
+    return response.data;
+  },
+
+  // Steps
+  async recordSteps(steps) {
+    const response = await axiosInstance.post('/steps', { steps });
+    return response.data;
+  },
+
+  async getStepHistory() {
+    const response = await axiosInstance.get('/steps/history');
+    return response.data;
+  },
+
+  async getCauseSteps(causeId) {
+    const response = await axiosInstance.get(`/steps/cause/${causeId}`);
+    return response.data;
+  },
+
+  async getDailySteps(date) {
+    const response = await axiosInstance.get(`/steps/daily/${date}`);
+    return response.data;
+  },
+
+  async getStepStats() {
+    const response = await axiosInstance.get('/steps/stats');
+    return response.data;
+  },
+
+  // Users
+  async getUserProfile() {
+    const response = await axiosInstance.get('/users/profile');
+    return response.data;
+  },
+
+  async updateUserProfile(data) {
+    const response = await axiosInstance.put('/users/profile', data);
+    return response.data;
+  },
+
+  async getUserCauses() {
+    const response = await axiosInstance.get('/users/causes');
+    return response.data;
+  }
+};
+
+export default api;
