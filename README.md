@@ -5,10 +5,13 @@ A multiplayer online prototype that turns your daily steps into support for the 
 ## 🌟 Features
 
 ### Core Functionality
-- **Google OAuth Authentication**: Secure login with Google account (or demo mode for testing)
+- **Google OAuth Authentication**: Secure login with Google account
 - **Cause Management**: Create, browse, and support causes you care about
-- **Step Tracking**:
-  - Automatic step detection using Device Motion API (mobile devices)
+- **GPS-Based Step Tracking**:
+  - Real-time GPS location tracking using Geolocation API
+  - Automatic distance calculation using Haversine formula
+  - Speed monitoring (current and average)
+  - Steps calculated from actual distance walked (1 step ≈ 0.762m)
   - Manual step entry for importing from other trackers
   - Configurable step distribution across multiple causes
 - **Real-time Statistics**: Track your impact with detailed charts and breakdowns
@@ -133,7 +136,7 @@ For full Google login functionality:
    - `http://localhost:3001`
 6. Copy Client ID and Client Secret to your `.env` files
 
-**Note**: For testing, you can use the "Demo Mode" button on the login page which doesn't require Google OAuth setup.
+**Note**: Google OAuth is required for authentication. There is no demo mode in the production version.
 
 ### 4. Run the Application
 
@@ -157,31 +160,38 @@ Open your browser and navigate to: http://localhost:5173
 
 ## 🧪 Testing the Application
 
-### Using Demo Mode (No Google OAuth Required)
+### Prerequisites
+1. Set up Google OAuth credentials (see step 3 above)
+2. Allow location permissions when prompted
+3. For best results, test outdoors or near windows for GPS signal
 
-1. Open http://localhost:5173
-2. Click "Try Demo Mode" button
-3. You're logged in with a demo account!
+### Testing GPS Step Tracking
 
-### Testing Step Tracking
-
-#### Manual Entry (Desktop)
-1. Navigate to "Tracker" page
-2. Enter number of steps (e.g., 100)
-3. Click "Record Steps"
-4. Steps are automatically distributed to your supported causes
-
-#### Automatic Detection (Mobile)
-1. Open the app on a mobile device
+#### Automatic GPS Tracking
+1. Open the app and login with Google
 2. Navigate to "Tracker" page
-3. Click "Start Tracking"
-4. Grant motion sensor permissions if prompted
-5. Walk around - steps will be detected!
-6. Click "Stop & Record" to save
+3. Click "Start GPS Tracking"
+4. Grant location permissions when prompted
+5. **Walk outdoors** - GPS tracks your movement in real-time
+6. Watch live stats: Steps, Distance (km), Speed (km/h), Duration
+7. Click "Stop & Record" to save your session
+8. Steps are automatically calculated from distance and distributed to causes
+
+**Note**: GPS tracking requires:
+- Location permissions enabled
+- Good GPS signal (outdoors or near windows)
+- Actual movement (at least a few meters)
+- Steps calculated automatically: Distance ÷ 0.762 meters = Steps
+
+#### Manual Entry (Alternative)
+1. Navigate to "Tracker" page
+2. Enter number of steps (e.g., 5000)
+3. Click "Record Steps"
+4. Steps are distributed to your supported causes
 
 ### Testing the Complete Flow
 
-1. **Login**: Use Demo Mode or Google OAuth
+1. **Login**: Use Google OAuth
 2. **Browse Causes**: Navigate to "Causes" page
 3. **Support a Cause**: Click "Support This Cause" on any cause
 4. **Configure Distribution**: Set interval (e.g., every 3 steps)
@@ -263,19 +273,34 @@ npm run build  # Creates optimized build in dist/
 npm run preview  # Preview production build
 ```
 
-## 📱 Device Motion API Notes
+## 📍 GPS Tracking Notes
 
-The step detection feature uses the Device Motion API which has some limitations:
+The step tracking feature uses the Geolocation API to track real movement:
 
-- **iOS**: Requires HTTPS in production and user permission
-- **Android**: Works on most modern browsers
-- **Desktop**: Limited/no support - use manual entry instead
-- **Permissions**: Some devices require explicit user permission
+### How It Works
+- **Distance Calculation**: Uses Haversine formula to calculate distance between GPS coordinates
+- **Step Estimation**: 1 step ≈ 0.762 meters (average stride length)
+- **Speed Monitoring**: Calculates current and average speed in real-time
+- **Accuracy**: Depends on GPS signal quality (±5-50 meters typical)
 
-If automatic detection doesn't work:
-1. Use manual step entry
-2. Import steps from your fitness tracker
-3. Try a different browser/device
+### Requirements
+- **Location Permissions**: Required - browser will prompt
+- **GPS Signal**: Best outdoors; works near windows indoors
+- **HTTPS**: Required in production for Geolocation API
+- **Movement**: Need to walk at least a few meters for accurate tracking
+
+### Platform Support
+- **iOS**: ✅ Supported (requires HTTPS in production)
+- **Android**: ✅ Supported on all modern browsers
+- **Desktop**: ✅ Supported if device has GPS/location services
+
+### Troubleshooting GPS
+If GPS tracking doesn't work:
+1. **Check Permissions**: Ensure location access is granted
+2. **Go Outdoors**: GPS works best with clear sky view
+3. **Wait for Signal**: Initial GPS lock may take 10-30 seconds
+4. **Use Manual Entry**: Alternative for importing steps from other trackers
+5. **Check Browser**: Use Chrome, Firefox, or Safari (latest versions)
 
 ## 🔐 Security Notes
 

@@ -34,27 +34,6 @@ function LoginPage() {
     }
   })
 
-  // Demo login for testing without Google OAuth
-  const demoLogin = async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      // Create a demo user session
-      const demoUser = {
-        id: 'demo-user',
-        email: 'demo@protestsimulator.com',
-        name: 'Demo User',
-        picture: 'https://ui-avatars.com/api/?name=Demo+User&background=3B82F6&color=fff',
-        totalSteps: 0,
-        causesSupported: [],
-        stepDistribution: {}
-      }
-      setUser(demoUser)
-    } catch (err) {
-      setError('Demo login failed.')
-      setLoading(false)
-    }
-  }
 
   return (
     <div style={{
@@ -152,46 +131,18 @@ function LoginPage() {
             </div>
           )}
 
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '1rem'
-          }}>
-            <button
-              onClick={() => login()}
-              disabled={loading}
-              className="btn btn-primary"
-              style={{
-                width: '100%',
-                padding: '1rem',
-                fontSize: '1.125rem'
-              }}
-            >
-              {loading ? 'Logging in...' : 'Continue with Google'}
-            </button>
-
-            <div style={{
-              textAlign: 'center',
-              color: 'var(--text-secondary)',
-              fontSize: '0.875rem',
-              margin: '0.5rem 0'
-            }}>
-              or
-            </div>
-
-            <button
-              onClick={demoLogin}
-              disabled={loading}
-              className="btn btn-secondary"
-              style={{
-                width: '100%',
-                padding: '1rem',
-                fontSize: '1.125rem'
-              }}
-            >
-              Try Demo Mode
-            </button>
-          </div>
+          <button
+            onClick={() => login()}
+            disabled={loading}
+            className="btn btn-primary"
+            style={{
+              width: '100%',
+              padding: '1rem',
+              fontSize: '1.125rem'
+            }}
+          >
+            {loading ? 'Logging in...' : 'Continue with Google'}
+          </button>
 
           <p style={{
             textAlign: 'center',

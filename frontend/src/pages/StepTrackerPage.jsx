@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useStepsStore, useCausesStore, useAuthStore } from '../context/store'
-import { Footprints, Play, Pause, Plus, Activity } from 'lucide-react'
-import useStepDetector from '../hooks/useStepDetector'
+import { Footprints, Play, Pause, Plus, Navigation, Gauge, Clock } from 'lucide-react'
+import useGPSTracker from '../hooks/useGPSTracker'
 
 function StepTrackerPage() {
   const { user } = useAuthStore()
@@ -9,11 +9,28 @@ function StepTrackerPage() {
   const { causes, fetchCauses } = useCausesStore()
 
   const [manualSteps, setManualSteps] = useState('')
-  const [recording, setRecording] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [lastRecorded, setLastRecorded] = useState(null)
 
-  const { steps: detectedSteps, isActive, start, stop, reset } = useStepDetector()
+  // Use GPS tracker instead of accelerometer
+  const {
+    isActive,
+    isSupported,
+    permission,
+    steps,
+    totalDistance,
+    distanceKm,
+    currentSpeed,
+    speedKmh,
+    averageSpeed,
+    averageSpeedKmh,
+    duration,
+    currentLocation,
+    start,
+    stop,
+    reset,
+    getSessionSummary
+  } = useGPSTracker()
 
   useEffect(() => {
     fetchCauses()
@@ -24,30 +41,31 @@ function StepTrackerPage() {
 
   const handleStartTracking = () => {
     start()
-    setRecording(true)
-    reset()
   }
 
   const handleStopAndRecord = async () => {
     stop()
-    setRecording(false)
 
-    if (detectedSteps > 0) {
-      await handleRecordSteps(detectedSteps)
+    const summary = getSessionSummary()
+
+    if (summary.steps > 0) {
+      await handleRecordSteps(summary.steps, summary)
       reset()
+    } else {
+      alert('No steps detected. Make sure you walked enough distance (GPS needs movement).')
     }
   }
 
   const handleRecordManual = async (e) => {
     e.preventDefault()
-    const steps = parseInt(manualSteps)
-    if (steps > 0) {
-      await handleRecordSteps(steps)
+    const stepsCount = parseInt(manualSteps)
+    if (stepsCount > 0) {
+      await handleRecordSteps(stepsCount, null)
       setManualSteps('')
     }
   }
 
-  const handleRecordSteps = async (steps) => {
+  const handleRecordSteps = async (stepsCount, sessionData = null) => {
     if (myCauses.length === 0) {
       alert('Please support at least one cause before recording steps!')
       return
@@ -55,12 +73,15 @@ function StepTrackerPage() {
 
     setSubmitting(true)
     try {
-      const result = await recordSteps(steps)
-      setLastRecorded(result)
+      const result = await recordSteps(stepsCount)
+      setLastRecorded({
+        ...result,
+        sessionData
+      })
       await fetchStats()
 
-      // Auto-dismiss after 3 seconds
-      setTimeout(() => setLastRecorded(null), 3000)
+      // Auto-dismiss after 5 seconds
+      setTimeout(() => setLastRecorded(null), 5000)
     } catch (error) {
       console.error('Failed to record steps:', error)
       alert('Failed to record steps. Please try again.')
@@ -69,11 +90,18 @@ function StepTrackerPage() {
     }
   }
 
+  // Format time from seconds to MM:SS
+  const formatDuration = (seconds) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
+
   return (
-    <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-      <h1 style={{ marginBottom: '0.5rem' }}>Step Tracker</h1>
+    <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+      <h1 style={{ marginBottom: '0.5rem' }}>GPS Step Tracker</h1>
       <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
-        Track your steps and distribute them to your supported causes
+        Track your walks using real-time GPS location. Distance, speed, and steps are calculated automatically.
       </p>
 
       {/* Success Message */}
@@ -81,20 +109,40 @@ function StepTrackerPage() {
         <div style={{
           backgroundColor: '#D1FAE5',
           color: '#065F46',
-          padding: '1rem',
+          padding: '1.5rem',
           borderRadius: '0.75rem',
-          marginBottom: '1.5rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '1rem'
+          marginBottom: '1.5rem'
         }}>
-          <Footprints size={24} />
-          <div>
-            <strong>{lastRecorded.totalSteps} steps recorded!</strong>
-            <div style={{ fontSize: '0.875rem', marginTop: '0.25rem' }}>
-              Distributed across {Object.keys(lastRecorded.distribution).length} cause(s)
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+            <Footprints size={24} />
+            <div>
+              <strong style={{ fontSize: '1.125rem' }}>{lastRecorded.totalSteps} steps recorded!</strong>
+              <div style={{ fontSize: '0.875rem', marginTop: '0.25rem' }}>
+                Distributed across {Object.keys(lastRecorded.distribution).length} cause(s)
+              </div>
             </div>
           </div>
+          {lastRecorded.sessionData && (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+              gap: '1rem',
+              padding: '1rem',
+              backgroundColor: 'rgba(255, 255, 255, 0.5)',
+              borderRadius: '0.5rem',
+              fontSize: '0.875rem'
+            }}>
+              <div>
+                <strong>Distance:</strong> {(lastRecorded.sessionData.distance / 1000).toFixed(2)} km
+              </div>
+              <div>
+                <strong>Duration:</strong> {formatDuration(lastRecorded.sessionData.duration)}
+              </div>
+              <div>
+                <strong>Avg Speed:</strong> {(lastRecorded.sessionData.averageSpeed * 3.6).toFixed(1)} km/h
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -118,14 +166,31 @@ function StepTrackerPage() {
         </div>
       )}
 
+      {/* GPS Permission Warning */}
+      {!isSupported && (
+        <div style={{
+          backgroundColor: '#FEE2E2',
+          color: '#991B1B',
+          padding: '1.5rem',
+          borderRadius: '0.75rem',
+          marginBottom: '1.5rem'
+        }}>
+          <strong>GPS not available</strong>
+          <p style={{ margin: '0.5rem 0 0 0' }}>
+            Your browser doesn't support GPS tracking or you denied location permissions.
+            Please enable location services or use manual entry.
+          </p>
+        </div>
+      )}
+
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
         gap: '1.5rem',
         marginBottom: '2rem'
       }}>
-        {/* Automatic Tracking Card */}
-        <div className="card">
+        {/* GPS Tracking Card */}
+        <div className="card" style={{ gridColumn: 'span 2' }}>
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -137,64 +202,162 @@ function StepTrackerPage() {
               padding: '1rem',
               borderRadius: '0.75rem'
             }}>
-              <Activity size={32} color="var(--primary)" />
+              <Navigation size={32} color="var(--primary)" />
             </div>
             <div>
-              <h3 style={{ marginBottom: '0.25rem' }}>Auto Tracking</h3>
+              <h3 style={{ marginBottom: '0.25rem' }}>GPS Tracking</h3>
               <p style={{
                 fontSize: '0.875rem',
                 color: 'var(--text-secondary)',
                 margin: 0
               }}>
-                Track steps automatically
+                Real-time location-based step counting
               </p>
             </div>
           </div>
 
+          {/* Real-time Stats Display */}
           <div style={{
-            textAlign: 'center',
-            padding: '2rem 0',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+            gap: '1.5rem',
+            padding: '1.5rem',
+            backgroundColor: isActive ? 'rgba(59, 130, 246, 0.05)' : 'var(--bg-secondary)',
+            borderRadius: '0.75rem',
             marginBottom: '1.5rem'
           }}>
-            <div style={{
-              fontSize: '4rem',
-              fontWeight: 'bold',
-              color: isActive ? 'var(--primary)' : 'var(--text-secondary)',
-              marginBottom: '0.5rem'
-            }}>
-              {detectedSteps}
+            <div style={{ textAlign: 'center' }}>
+              <div style={{
+                fontSize: '3rem',
+                fontWeight: 'bold',
+                color: isActive ? 'var(--primary)' : 'var(--text-secondary)',
+                marginBottom: '0.25rem'
+              }}>
+                {steps}
+              </div>
+              <div style={{
+                fontSize: '0.75rem',
+                color: 'var(--text-secondary)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                Steps
+              </div>
             </div>
-            <div style={{
-              fontSize: '0.875rem',
-              color: 'var(--text-secondary)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
-            }}>
-              Steps Detected
+
+            <div style={{ textAlign: 'center' }}>
+              <div style={{
+                fontSize: '3rem',
+                fontWeight: 'bold',
+                color: isActive ? 'var(--secondary)' : 'var(--text-secondary)',
+                marginBottom: '0.25rem'
+              }}>
+                {distanceKm.toFixed(2)}
+              </div>
+              <div style={{
+                fontSize: '0.75rem',
+                color: 'var(--text-secondary)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                Kilometers
+              </div>
+            </div>
+
+            <div style={{ textAlign: 'center' }}>
+              <div style={{
+                fontSize: '3rem',
+                fontWeight: 'bold',
+                color: isActive ? 'var(--warning)' : 'var(--text-secondary)',
+                marginBottom: '0.25rem'
+              }}>
+                {speedKmh.toFixed(1)}
+              </div>
+              <div style={{
+                fontSize: '0.75rem',
+                color: 'var(--text-secondary)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                km/h
+              </div>
+            </div>
+
+            <div style={{ textAlign: 'center' }}>
+              <div style={{
+                fontSize: '3rem',
+                fontWeight: 'bold',
+                color: isActive ? 'var(--danger)' : 'var(--text-secondary)',
+                marginBottom: '0.25rem'
+              }}>
+                {formatDuration(duration)}
+              </div>
+              <div style={{
+                fontSize: '0.75rem',
+                color: 'var(--text-secondary)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                Duration
+              </div>
             </div>
           </div>
 
-          {!isActive ? (
-            <button
-              onClick={handleStartTracking}
-              disabled={myCauses.length === 0 || submitting}
-              className="btn btn-primary"
-              style={{ width: '100%' }}
-            >
-              <Play size={20} />
-              Start Tracking
-            </button>
-          ) : (
-            <button
-              onClick={handleStopAndRecord}
-              disabled={submitting}
-              className="btn btn-danger"
-              style={{ width: '100%' }}
-            >
-              <Pause size={20} />
-              Stop & Record
-            </button>
+          {/* GPS Location Info */}
+          {currentLocation && isActive && (
+            <div style={{
+              padding: '1rem',
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              borderRadius: '0.5rem',
+              marginBottom: '1.5rem',
+              fontSize: '0.875rem'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                <Navigation size={16} color="var(--secondary)" />
+                <strong>GPS Active</strong>
+              </div>
+              <div style={{ color: 'var(--text-secondary)' }}>
+                Accuracy: ±{currentLocation.accuracy.toFixed(0)}m |
+                Lat: {currentLocation.latitude.toFixed(6)} |
+                Lon: {currentLocation.longitude.toFixed(6)}
+              </div>
+            </div>
           )}
+
+          {/* Control Buttons */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            {!isActive ? (
+              <button
+                onClick={handleStartTracking}
+                disabled={myCauses.length === 0 || submitting || !isSupported}
+                className="btn btn-primary"
+                style={{ gridColumn: 'span 2' }}
+              >
+                <Play size={20} />
+                Start GPS Tracking
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={handleStopAndRecord}
+                  disabled={submitting}
+                  className="btn btn-danger"
+                >
+                  <Pause size={20} />
+                  Stop & Record
+                </button>
+                <button
+                  onClick={() => {
+                    stop()
+                    reset()
+                  }}
+                  className="btn btn-secondary"
+                >
+                  Cancel
+                </button>
+              </>
+            )}
+          </div>
 
           <div style={{
             fontSize: '0.75rem',
@@ -206,9 +369,9 @@ function StepTrackerPage() {
             textAlign: 'center'
           }}>
             {isActive ? (
-              <>⏺ Recording... Move your device to detect steps</>
+              <>⏺ GPS Recording... Walk to accumulate steps. Steps are calculated from distance traveled.</>
             ) : (
-              <>Uses device motion sensors for step detection</>
+              <>Uses GPS to track your actual walking distance and calculate steps (avg: 0.762m per step)</>
             )}
           </div>
         </div>
@@ -254,12 +417,13 @@ function StepTrackerPage() {
                 placeholder="e.g., 5000"
                 className="form-input"
                 style={{ fontSize: '1.5rem', textAlign: 'center', padding: '1.5rem' }}
+                disabled={isActive}
               />
             </div>
 
             <button
               type="submit"
-              disabled={!manualSteps || parseInt(manualSteps) < 1 || myCauses.length === 0 || submitting}
+              disabled={!manualSteps || parseInt(manualSteps) < 1 || myCauses.length === 0 || submitting || isActive}
               className="btn btn-primary"
               style={{ width: '100%' }}
             >
@@ -277,7 +441,7 @@ function StepTrackerPage() {
             borderRadius: '0.5rem',
             textAlign: 'center'
           }}>
-            Great for importing steps from other trackers
+            Import steps from other fitness trackers
           </div>
         </div>
       </div>
@@ -349,8 +513,9 @@ function StepTrackerPage() {
             fontSize: '0.875rem',
             color: 'var(--text-primary)'
           }}>
-            <strong>Example:</strong> If you record 10 steps, they will be distributed based on the intervals above.
-            You can adjust these settings on the{' '}
+            <strong>How it works:</strong> GPS tracks your walking distance in real-time.
+            Steps are calculated automatically (1 step ≈ 0.762 meters).
+            Configure intervals on the{' '}
             <a href="/causes" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>
               Causes page
             </a>.
@@ -358,7 +523,7 @@ function StepTrackerPage() {
         </div>
       )}
 
-      {/* Today's Stats */}
+      {/* User Stats */}
       {stats && (
         <div className="card" style={{ marginTop: '1.5rem' }}>
           <h3 style={{ marginBottom: '1.5rem' }}>Your Stats</h3>
