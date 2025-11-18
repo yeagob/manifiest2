@@ -4,7 +4,15 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export const requireAuth = (req, res, next) => {
   if (!req.session.userId) {
-    return res.status(401).json({ error: 'Authentication required' });
+    console.warn('⚠️ Auth required but no session found:', {
+      hasSession: !!req.session,
+      sessionId: req.sessionID,
+      cookies: req.cookies
+    });
+    return res.status(401).json({
+      error: 'Authentication required',
+      message: 'Please log in to continue'
+    });
   }
   next();
 };

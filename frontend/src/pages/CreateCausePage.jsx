@@ -47,25 +47,34 @@ function CreateCausePage() {
 
       // Check for similar causes using AI
       console.log('🤖 Checking for similar causes with AI...')
-      const aiResult = await api.checkSimilarCause({
-        title: formData.title,
-        description: formData.description,
-        category: formData.category
-      })
+      try {
+        const aiResult = await api.checkSimilarCause({
+          title: formData.title,
+          description: formData.description,
+          category: formData.category
+        })
 
-      setCheckingAI(false)
+        setCheckingAI(false)
 
-      // If AI found a similar cause, show modal for user decision
-      if (aiResult.isSimilar && aiResult.matchedCause) {
-        console.log('✨ Similar cause found:', aiResult)
-        setSimilarCause(aiResult)
-        setShowSimilarModal(true)
-        setLoading(false)
-        return // Don't create yet, wait for user decision
+        // If AI found a similar cause, show modal for user decision
+        if (aiResult.isSimilar && aiResult.matchedCause) {
+          console.log('✨ Similar cause found:', aiResult)
+          setSimilarCause(aiResult)
+          setShowSimilarModal(true)
+          setLoading(false)
+          return // Don't create yet, wait for user decision
+        }
+
+        // No similar cause found, proceed with creation
+        console.log('✅ No similar causes found, creating...')
+      } catch (aiError) {
+        // AI check failed - could be 401, 500, or network error
+        console.warn('⚠️ AI check failed, proceeding without AI:', aiError.message)
+        setCheckingAI(false)
+        // Continue anyway - don't block cause creation if AI fails
       }
 
-      // No similar cause found, proceed with creation
-      console.log('✅ No similar causes found, creating...')
+      // Proceed with creation regardless of AI result
       await createCauseAndNavigate()
     } catch (err) {
       console.error('Error creating cause:', err)
