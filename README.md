@@ -5,7 +5,9 @@ A multiplayer online prototype that turns your daily steps into support for the 
 ## 🌟 Features
 
 ### Core Functionality
-- **Google OAuth Authentication**: Secure login with Google account
+- **Simple Authentication**:
+  - **Email Login**: Quick access with just an email address (perfect for MVP testing)
+  - **Google OAuth**: Secure login with Google account
 - **Cause Management**: Create, browse, and support causes you care about
 - **GPS-Based Step Tracking**:
   - Real-time GPS location tracking using Geolocation API
@@ -125,6 +127,8 @@ VITE_GOOGLE_CLIENT_ID=your_google_client_id_here
 
 ### 3. Set Up Google OAuth (Optional)
 
+**For quick MVP testing, you can skip this step and use email login instead!**
+
 For full Google login functionality:
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
@@ -136,7 +140,7 @@ For full Google login functionality:
    - `http://localhost:3001`
 6. Copy Client ID and Client Secret to your `.env` files
 
-**Note**: Google OAuth is required for authentication. There is no demo mode in the production version.
+**Note**: Email login works immediately without any setup. Google OAuth is optional for enhanced authentication.
 
 ### 4. Run the Application
 
@@ -161,7 +165,9 @@ Open your browser and navigate to: http://localhost:5173
 ## 🧪 Testing the Application
 
 ### Prerequisites
-1. Set up Google OAuth credentials (see step 3 above)
+1. **Login Options**:
+   - **Email Login** (Recommended for quick testing): Just enter your email address
+   - **Google OAuth** (Optional): Set up Google OAuth credentials (see step 3 above)
 2. Allow location permissions when prompted
 3. For best results, test outdoors or near windows for GPS signal
 
@@ -191,7 +197,9 @@ Open your browser and navigate to: http://localhost:5173
 
 ### Testing the Complete Flow
 
-1. **Login**: Use Google OAuth
+1. **Login**:
+   - **Email Login**: Enter your email (and optionally your name)
+   - **Google OAuth**: Click "Continue with Google"
 2. **Browse Causes**: Navigate to "Causes" page
 3. **Support a Cause**: Click "Support This Cause" on any cause
 4. **Configure Distribution**: Set interval (e.g., every 3 steps)
@@ -210,7 +218,8 @@ Open your browser and navigate to: http://localhost:5173
 ## 📊 API Endpoints
 
 ### Authentication
-- `POST /api/auth/google` - Login with Google
+- `POST /api/auth/email` - Login with email (body: `{ email, name? }`)
+- `POST /api/auth/google` - Login with Google (body: `{ token }`)
 - `GET /api/auth/me` - Get current user
 - `POST /api/auth/logout` - Logout
 - `GET /api/auth/status` - Check auth status

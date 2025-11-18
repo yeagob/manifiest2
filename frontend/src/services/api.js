@@ -12,6 +12,11 @@ const axiosInstance = axios.create({
 
 const api = {
   // Auth
+  async loginWithEmail(email, name) {
+    const response = await axiosInstance.post('/auth/email', { email, name });
+    return response.data.user;
+  },
+
   async loginWithGoogle(token) {
     const response = await axiosInstance.post('/auth/google', { token });
     return response.data.user;

@@ -7,6 +7,8 @@ import { Heart, TrendingUp, Users } from 'lucide-react'
 function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [email, setEmail] = useState('')
+  const [name, setName] = useState('')
   const { setUser } = useAuthStore()
 
   const login = useGoogleLogin({
@@ -33,6 +35,25 @@ function LoginPage() {
       setError('Google login failed. Please try again.')
     }
   })
+
+  const handleEmailLogin = async (e) => {
+    e.preventDefault()
+    if (!email.trim()) {
+      setError('Email is required')
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+    try {
+      const user = await api.loginWithEmail(email.trim(), name.trim())
+      setUser(user)
+    } catch (err) {
+      console.error('Email login error:', err)
+      setError(err.message || 'Failed to login. Please try again.')
+      setLoading(false)
+    }
+  }
 
 
   return (
@@ -131,10 +152,68 @@ function LoginPage() {
             </div>
           )}
 
+          {/* Email Login Form */}
+          <form onSubmit={handleEmailLogin} style={{ marginBottom: '1.5rem' }}>
+            <div className="form-group">
+              <label className="form-label" htmlFor="email">Email</label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="your.email@example.com"
+                className="form-input"
+                disabled={loading}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="name">
+                Name (Optional)
+              </label>
+              <input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Your Name"
+                className="form-input"
+                disabled={loading}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn btn-primary"
+              style={{
+                width: '100%',
+                padding: '1rem',
+                fontSize: '1.125rem'
+              }}
+            >
+              {loading ? 'Logging in...' : 'Continue with Email'}
+            </button>
+          </form>
+
+          {/* Divider */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem',
+            margin: '1.5rem 0'
+          }}>
+            <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+            <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>OR</span>
+            <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+          </div>
+
+          {/* Google Login */}
           <button
             onClick={() => login()}
             disabled={loading}
-            className="btn btn-primary"
+            className="btn btn-secondary"
             style={{
               width: '100%',
               padding: '1rem',
