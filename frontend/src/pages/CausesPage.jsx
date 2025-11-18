@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useCausesStore, useAuthStore } from '../context/store'
-import { Plus, Heart, Footprints, Users, HeartOff, Settings } from 'lucide-react'
+import { Plus, Heart, Footprints, Users, HeartOff, Settings, Eye } from 'lucide-react'
 
 function CausesPage() {
   const { user } = useAuthStore()
@@ -285,6 +285,20 @@ function CausesPage() {
                   display: 'flex',
                   gap: '0.5rem'
                 }}>
+                  <Link
+                    to={`/causes/${cause.id}/live`}
+                    className="btn btn-secondary"
+                    style={{
+                      flex: 1,
+                      background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)',
+                      color: 'white',
+                      border: 'none'
+                    }}
+                  >
+                    <Eye size={20} />
+                    View Live
+                  </Link>
+
                   {isSupported ? (
                     <button
                       onClick={() => handleUnsupport(cause.id)}

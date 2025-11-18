@@ -12,6 +12,7 @@ import authRoutes from './routes/auth.js';
 import causesRoutes from './routes/causes.js';
 import stepsRoutes from './routes/steps.js';
 import usersRoutes from './routes/users.js';
+import messagesRoutes from './routes/messages.js';
 
 dotenv.config();
 
@@ -42,7 +43,7 @@ app.use(session({
 // Initialize data directories
 const dataPath = join(__dirname, '../data');
 const initDataDirs = async () => {
-  const dirs = ['causes', 'users', 'steps'];
+  const dirs = ['causes', 'users', 'steps', 'messages'];
   for (const dir of dirs) {
     const dirPath = join(dataPath, dir);
     try {
@@ -58,6 +59,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/causes', causesRoutes);
 app.use('/api/steps', stepsRoutes);
 app.use('/api/users', usersRoutes);
+app.use('/api/messages', messagesRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

@@ -8,6 +8,7 @@ import CausesPage from './pages/CausesPage'
 import ProfilePage from './pages/ProfilePage'
 import StepTrackerPage from './pages/StepTrackerPage'
 import CreateCausePage from './pages/CreateCausePage'
+import LiveProtestPage from './pages/LiveProtestPage'
 
 function App() {
   const { isAuthenticated, isLoading, checkAuth } = useAuthStore()
@@ -42,6 +43,7 @@ function App() {
           <Route path="/" element={<DashboardPage />} />
           <Route path="/causes" element={<CausesPage />} />
           <Route path="/causes/new" element={<CreateCausePage />} />
+          <Route path="/causes/:causeId/live" element={<LiveProtestPage />} />
           <Route path="/tracker" element={<StepTrackerPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
