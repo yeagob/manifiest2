@@ -31,9 +31,22 @@ router.post('/email', async (req, res) => {
     // Set session
     req.session.userId = user.id;
 
-    res.json({
-      user: user.toJSON(),
-      message: 'Login successful'
+    // Save session explicitly to ensure cookie is sent
+    req.session.save((err) => {
+      if (err) {
+        console.error('Session save error:', err);
+        return res.status(500).json({ error: 'Failed to create session' });
+      }
+
+      console.log('✅ Email login successful, session created:', {
+        userId: user.id,
+        sessionId: req.sessionID
+      });
+
+      res.json({
+        user: user.toJSON(),
+        message: 'Login successful'
+      });
     });
   } catch (error) {
     console.error('Email auth error:', error);
@@ -59,9 +72,22 @@ router.post('/google', async (req, res) => {
     // Set session
     req.session.userId = user.id;
 
-    res.json({
-      user: user.toJSON(),
-      message: 'Login successful'
+    // Save session explicitly to ensure cookie is sent
+    req.session.save((err) => {
+      if (err) {
+        console.error('Session save error:', err);
+        return res.status(500).json({ error: 'Failed to create session' });
+      }
+
+      console.log('✅ Google login successful, session created:', {
+        userId: user.id,
+        sessionId: req.sessionID
+      });
+
+      res.json({
+        user: user.toJSON(),
+        message: 'Login successful'
+      });
     });
   } catch (error) {
     console.error('Google auth error:', error);
