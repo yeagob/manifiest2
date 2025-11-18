@@ -9,6 +9,17 @@ A multiplayer online prototype that turns your daily steps into support for the 
   - **Email Login**: Quick access with just an email address (perfect for MVP testing)
   - **Google OAuth**: Secure login with Google account
 - **Cause Management**: Create, browse, and support causes you care about
+- **AI-Powered Duplicate Detection** ✨:
+  - Google Gemini AI analyzes new causes for similarity with existing ones
+  - Intelligent semantic matching (not just keywords)
+  - Suggests consolidation to strengthen existing movements
+  - User maintains full control to create anyway if desired
+  - Form data preserved during the decision process
+- **Live Virtual Protest Visualization**:
+  - Artistic crowd representation showing supporter magnitude
+  - Real-time message/placard system
+  - Like and interact with other supporters
+  - Beautiful glassmorphism UI with animations
 - **GPS-Based Step Tracking**:
   - Real-time GPS location tracking using Geolocation API
   - Automatic distance calculation using Haversine formula
@@ -111,6 +122,9 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret_here
 SESSION_SECRET=your_random_session_secret
 FRONTEND_URL=http://localhost:5173
 DATA_PATH=./data
+
+# AI Features (Optional)
+GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
 #### Frontend (.env)
@@ -142,7 +156,38 @@ For full Google login functionality:
 
 **Note**: Email login works immediately without any setup. Google OAuth is optional for enhanced authentication.
 
-### 4. Run the Application
+### 4. Set Up Gemini AI (Optional but Recommended) ✨
+
+**AI-powered duplicate detection helps consolidate community efforts and prevent cause fragmentation!**
+
+To enable AI features:
+
+1. Go to [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. Sign in with your Google account
+3. Click "Create API Key"
+4. Copy the API key
+5. Add it to `backend/.env`:
+   ```env
+   GEMINI_API_KEY=your_actual_api_key_here
+   ```
+
+**What happens if you skip this?**
+- The app works perfectly fine without AI
+- When creating causes, you'll skip the similarity check
+- Users can create duplicate causes more easily
+
+**What happens with AI enabled?**
+- When users create a cause, Gemini analyzes it against all existing causes
+- If similar causes exist (>70% semantic similarity), users see:
+  - The matched cause with full details
+  - AI explanation of why they're similar
+  - Option to join the existing cause OR create anyway
+  - Form data is preserved (never lost)
+- Better community consolidation and stronger movements
+
+**Cost**: Gemini 1.5 Flash is free for up to 1,500 requests/day (more than enough for MVP testing).
+
+### 5. Run the Application
 
 #### Start Backend (Terminal 1)
 ```bash
@@ -207,6 +252,9 @@ Open your browser and navigate to: http://localhost:5173
    - Fill in title, description, category
    - Choose icon and color
    - Submit
+   - ✨ **AI checks for similar causes** (if Gemini API key is set)
+   - If similar cause found, decide: join existing or create new
+   - Form never loses data during this process
 6. **Track Steps**: Go to "Tracker"
    - Record steps manually or automatically
    - Watch them distribute across your causes
@@ -240,6 +288,19 @@ Open your browser and navigate to: http://localhost:5173
 - `GET /api/steps/history` - Get step history (auth required)
 - `GET /api/steps/cause/:causeId` - Get steps for cause (auth required)
 - `GET /api/steps/stats` - Get user stats (auth required)
+
+### AI ✨
+- `POST /api/ai/check-similar-cause` - Check if cause is similar to existing causes (auth required)
+  - Body: `{ title, description, category }`
+  - Returns: `{ isSimilar, confidence, matchedCause?, reason, suggestion }`
+- `GET /api/ai/status` - Check if AI service is enabled and working
+
+### Messages
+- `GET /api/messages/cause/:causeId` - Get messages for a cause
+- `POST /api/messages` - Create a message/placard (auth required)
+- `POST /api/messages/:id/like` - Like a message
+- `DELETE /api/messages/:id/like` - Unlike a message
+- `DELETE /api/messages/:id` - Delete a message (auth required)
 
 ### Users
 - `GET /api/users/profile` - Get user profile (auth required)

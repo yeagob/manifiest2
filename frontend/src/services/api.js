@@ -123,6 +123,17 @@ const api = {
   async getUserCauses() {
     const response = await axiosInstance.get('/users/causes');
     return response.data;
+  },
+
+  // AI
+  async checkSimilarCause(causeData) {
+    const response = await axiosInstance.post('/ai/check-similar-cause', causeData);
+    return response.data;
+  },
+
+  async getAIStatus() {
+    const response = await axiosInstance.get('/ai/status');
+    return response.data;
   }
 };
 

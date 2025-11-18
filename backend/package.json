@@ -9,20 +9,26 @@
     "dev": "nodemon src/index.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
   },
-  "keywords": ["protest", "simulator", "causes", "steps"],
+  "keywords": [
+    "protest",
+    "simulator",
+    "causes",
+    "steps"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2",
+    "@google/generative-ai": "^0.24.1",
+    "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
-    "uuid": "^9.0.1",
-    "google-auth-library": "^9.4.1",
+    "express": "^4.18.2",
     "express-session": "^1.17.3",
-    "cookie-parser": "^1.4.6"
+    "google-auth-library": "^9.4.1",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "nodemon": "^3.0.2",
-    "jest": "^29.7.0"
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.2"
   }
 }

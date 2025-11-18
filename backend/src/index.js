@@ -13,6 +13,7 @@ import causesRoutes from './routes/causes.js';
 import stepsRoutes from './routes/steps.js';
 import usersRoutes from './routes/users.js';
 import messagesRoutes from './routes/messages.js';
+import aiRoutes from './routes/ai.js';
 
 dotenv.config();
 
@@ -60,6 +61,7 @@ app.use('/api/causes', causesRoutes);
 app.use('/api/steps', stepsRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/messages', messagesRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
