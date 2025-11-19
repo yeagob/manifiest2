@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useAuthStore, useStepsStore, useCausesStore } from '../context/store'
 import { Footprints, Heart, TrendingUp, Award, Edit3 } from 'lucide-react'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts'
-import ProtestAvatar from '../components/ProtestAvatar'
-import SVGAvatarEditor from '../components/SVGAvatarEditor'
-import api from '../services/api'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
+import AvatarSVG from '../components/AvatarSVG'
+import AvatarEditor from '../components/AvatarEditor'
 
 function ProfilePage() {
   const { user, setUser } = useAuthStore()
@@ -61,7 +60,7 @@ function ProfilePage() {
               borderRadius: '1rem',
               backgroundColor: 'var(--bg-secondary)'
             }}>
-              <ProtestAvatar config={user?.avatar} size={120} />
+              <AvatarSVG config={user?.avatar} size={120} />
             </div>
             <button
               onClick={() => setShowAvatarEditor(true)}
@@ -320,18 +319,12 @@ function ProfilePage() {
       )}
 
       {/* Avatar Editor Modal */}
-      <SVGAvatarEditor
+      <AvatarEditor
         isOpen={showAvatarEditor}
         onClose={() => setShowAvatarEditor(false)}
         currentAvatar={user?.avatar}
-        onSave={async (newAvatar) => {
-          try {
-            await api.updateAvatar(newAvatar)
-            setUser({ ...user, avatar: newAvatar })
-            setShowAvatarEditor(false)
-          } catch (error) {
-            console.error('Failed to save avatar:', error)
-          }
+        onSave={(newAvatar) => {
+          setUser({ ...user, avatar: newAvatar })
         }}
       />
     </div>
