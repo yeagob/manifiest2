@@ -130,6 +130,11 @@ const api = {
     return response.data;
   },
 
+  async updateAvatar(emoji, color) {
+    const response = await axiosInstance.put('/users/avatar', { emoji, color });
+    return response.data;
+  },
+
   // AI
   async checkSimilarCause(causeData) {
     const response = await axiosInstance.post('/ai/check-similar-cause', causeData);

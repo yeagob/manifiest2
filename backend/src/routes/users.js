@@ -46,6 +46,38 @@ router.put('/profile', requireAuth, async (req, res) => {
   }
 });
 
+// Update user avatar
+router.put('/avatar', requireAuth, async (req, res) => {
+  try {
+    const user = await User.findById(req.session.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const { emoji, color } = req.body;
+
+    if (!emoji) {
+      return res.status(400).json({ error: 'Emoji is required' });
+    }
+
+    await user.updateAvatar(emoji, color);
+
+    console.log('✅ Avatar updated:', {
+      userId: user.id,
+      emoji,
+      color
+    });
+
+    res.json({
+      message: 'Avatar updated successfully',
+      avatar: user.avatar
+    });
+  } catch (error) {
+    console.error('Failed to update avatar:', error);
+    res.status(500).json({ error: 'Failed to update avatar' });
+  }
+});
+
 // Get user's supported causes
 router.get('/causes', requireAuth, async (req, res) => {
   try {

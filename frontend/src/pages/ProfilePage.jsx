@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useAuthStore, useStepsStore, useCausesStore } from '../context/store'
-import { Footprints, Heart, TrendingUp, Award } from 'lucide-react'
+import { Footprints, Heart, TrendingUp, Award, Edit3 } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts'
+import AvatarEditor from '../components/AvatarEditor'
 
 function ProfilePage() {
-  const { user } = useAuthStore()
+  const { user, setUser } = useAuthStore()
   const { stats, fetchStats } = useStepsStore()
   const { causes, fetchCauses } = useCausesStore()
   const [loading, setLoading] = useState(true)
+  const [showAvatarEditor, setShowAvatarEditor] = useState(false)
 
   useEffect(() => {
     const loadData = async () => {

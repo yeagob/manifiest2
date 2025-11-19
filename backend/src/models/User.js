@@ -15,6 +15,12 @@ class User {
     this.totalSteps = data.totalSteps || 0;
     this.causesSupported = data.causesSupported || []; // array of cause IDs
     this.stepDistribution = data.stepDistribution || {}; // { causeId: { interval: 1, count: 0 } }
+
+    // Avatar customization
+    this.avatar = data.avatar || {
+      emoji: '✊', // Default protest symbol
+      color: '#6366F1' // Default indigo color
+    };
   }
 
   async save() {
@@ -60,6 +66,15 @@ class User {
     return this;
   }
 
+  async updateAvatar(emoji, color) {
+    this.avatar = {
+      emoji: emoji || this.avatar.emoji,
+      color: color || this.avatar.color
+    };
+    await this.save();
+    return this;
+  }
+
   toJSON() {
     return {
       id: this.id,
@@ -71,7 +86,8 @@ class User {
       updatedAt: this.updatedAt,
       totalSteps: this.totalSteps,
       causesSupported: this.causesSupported,
-      stepDistribution: this.stepDistribution
+      stepDistribution: this.stepDistribution,
+      avatar: this.avatar
     };
   }
 
