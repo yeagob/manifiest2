@@ -2,6 +2,8 @@ import express from 'express';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
 import Cause from '../models/Cause.js';
 import User from '../models/User.js';
+import Step from '../models/Step.js';
+import Message from '../models/Message.js';
 
 const router = express.Router();
 
@@ -184,6 +186,68 @@ router.delete('/:id', requireAuth, async (req, res) => {
     res.json({ message: 'Cause deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to delete cause' });
+  }
+});
+
+// Get supporters with their steps for a cause (for avenue visualization)
+router.get('/:id/supporters-with-steps', async (req, res) => {
+  try {
+    const cause = await Cause.findById(req.params.id);
+    if (!cause) {
+      return res.status(404).json({ error: 'Cause not found' });
+    }
+
+    // Get all steps for this cause
+    const allSteps = await Step.findByCause(req.params.id);
+
+    // Get all messages for this cause
+    const allMessages = await Message.findByCause(req.params.id);
+
+    // Group steps by user and calculate totals
+    const userStepsMap = {};
+    allSteps.forEach(step => {
+      if (!userStepsMap[step.userId]) {
+        userStepsMap[step.userId] = 0;
+      }
+      userStepsMap[step.userId] += step.steps;
+    });
+
+    // Get user details and their latest message for this cause
+    const supporters = await Promise.all(
+      Object.keys(userStepsMap).map(async (userId) => {
+        const user = await User.findById(userId);
+        if (!user) return null;
+
+        // Find user's latest message for this cause
+        const userMessages = allMessages.filter(msg => msg.userId === userId);
+        const latestMessage = userMessages.length > 0
+          ? userMessages.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0]
+          : null;
+
+        return {
+          userId: user.id,
+          name: user.name,
+          email: user.email,
+          picture: user.picture,
+          steps: userStepsMap[userId],
+          message: latestMessage ? latestMessage.message : null,
+          messageId: latestMessage ? latestMessage.id : null
+        };
+      })
+    );
+
+    // Filter out nulls and sort by steps (most steps first - they're at the front)
+    const validSupporters = supporters.filter(s => s !== null);
+    validSupporters.sort((a, b) => b.steps - a.steps);
+
+    res.json({
+      totalSupporters: validSupporters.length,
+      maxSteps: validSupporters.length > 0 ? validSupporters[0].steps : 0,
+      supporters: validSupporters
+    });
+  } catch (error) {
+    console.error('Failed to get supporters with steps:', error);
+    res.status(500).json({ error: 'Failed to fetch supporters data' });
   }
 });
 

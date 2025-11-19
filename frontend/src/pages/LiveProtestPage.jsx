@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, Users, Footprints, Heart, Send, ThumbsUp } from 'lucide-react'
+import { ArrowLeft, Users, Footprints, Heart, Send, ThumbsUp, Play, Pause } from 'lucide-react'
 import api from '../services/api'
 import { useAuthStore } from '../context/store'
 
@@ -9,22 +9,61 @@ function LiveProtestPage() {
   const { user } = useAuthStore()
 
   const [cause, setCause] = useState(null)
+  const [supporters, setSupporters] = useState([])
+  const [maxSteps, setMaxSteps] = useState(0)
   const [messages, setMessages] = useState([])
   const [newMessage, setNewMessage] = useState('')
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
 
+  // Avenue visualization state
+  const [scrollPosition, setScrollPosition] = useState(0) // 0-100%
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [hoveredSupporter, setHoveredSupporter] = useState(null)
+  const animationRef = useRef(null)
+
   useEffect(() => {
     loadData()
-    // Reload messages every 10 seconds for "live" feel
-    const interval = setInterval(loadMessages, 10000)
+    // Reload data every 10 seconds for "live" feel
+    const interval = setInterval(loadData, 10000)
     return () => clearInterval(interval)
   }, [causeId])
+
+  // Auto-scroll animation
+  useEffect(() => {
+    if (isPlaying) {
+      const duration = 30000 // 30 seconds to go from 0 to 100%
+      const startTime = Date.now()
+      const startPosition = scrollPosition
+
+      const animate = () => {
+        const elapsed = Date.now() - startTime
+        const progress = Math.min((elapsed / duration), 1)
+        const newPosition = startPosition + ((100 - startPosition) * progress)
+
+        setScrollPosition(newPosition)
+
+        if (newPosition < 100) {
+          animationRef.current = requestAnimationFrame(animate)
+        } else {
+          setIsPlaying(false)
+        }
+      }
+
+      animationRef.current = requestAnimationFrame(animate)
+
+      return () => {
+        if (animationRef.current) {
+          cancelAnimationFrame(animationRef.current)
+        }
+      }
+    }
+  }, [isPlaying])
 
   const loadData = async () => {
     setLoading(true)
     try {
-      await Promise.all([loadCause(), loadMessages()])
+      await Promise.all([loadCause(), loadSupporters(), loadMessages()])
     } finally {
       setLoading(false)
     }
@@ -36,6 +75,16 @@ function LiveProtestPage() {
       setCause(data)
     } catch (error) {
       console.error('Failed to load cause:', error)
+    }
+  }
+
+  const loadSupporters = async () => {
+    try {
+      const data = await api.getCauseSupportersWithSteps(causeId)
+      setSupporters(data.supporters || [])
+      setMaxSteps(data.maxSteps || 0)
+    } catch (error) {
+      console.error('Failed to load supporters:', error)
     }
   }
 
@@ -67,7 +116,7 @@ function LiveProtestPage() {
       })
 
       setNewMessage('')
-      await loadMessages()
+      await loadData()
     } catch (error) {
       console.error('Failed to post message:', error)
       alert('Failed to post message. Please try again.')
@@ -88,6 +137,15 @@ function LiveProtestPage() {
     }
   }
 
+  const togglePlayPause = () => {
+    setIsPlaying(!isPlaying)
+  }
+
+  const handleScrollChange = (e) => {
+    setScrollPosition(parseFloat(e.target.value))
+    setIsPlaying(false) // Stop animation when manually scrolling
+  }
+
   if (loading || !cause) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
@@ -96,9 +154,7 @@ function LiveProtestPage() {
     )
   }
 
-  // Calculate crowd size (supporters count with animation multiplier for visual effect)
-  const crowdSize = cause.supporterCount * 10 // Visual multiplier
-  const powerLevel = Math.min(100, (cause.totalSteps / 10000) * 100) // Power based on steps
+  const powerLevel = Math.min(100, (cause.totalSteps / 10000) * 100)
 
   return (
     <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
@@ -160,11 +216,11 @@ function LiveProtestPage() {
         }}>
           <div>
             <div style={{ fontSize: '3rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-              {cause.supporterCount.toLocaleString()}
+              {supporters.length.toLocaleString()}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: 0.9 }}>
               <Users size={20} />
-              <span>Real Supporters</span>
+              <span>Active Walkers</span>
             </div>
           </div>
 
@@ -180,11 +236,11 @@ function LiveProtestPage() {
 
           <div>
             <div style={{ fontSize: '3rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-              {powerLevel.toFixed(0)}%
+              {maxSteps > 0 ? `${(maxSteps * 0.762 / 1000).toFixed(1)}km` : '0km'}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: 0.9 }}>
               <Heart size={20} />
-              <span>Movement Power</span>
+              <span>Leader Distance</span>
             </div>
           </div>
         </div>
@@ -214,95 +270,27 @@ function LiveProtestPage() {
         gap: 'var(--space-6)',
         alignItems: 'start'
       }}>
-        {/* Virtual Crowd Visualization */}
-        <div className="card" style={{ minHeight: '600px' }}>
-          <h3 style={{ marginBottom: 'var(--space-4)' }}>
-            🎭 Virtual Protest • LIVE
-          </h3>
-
-          {/* Crowd Animation */}
-          <div style={{
-            position: 'relative',
-            height: '500px',
-            background: 'linear-gradient(180deg, rgba(99,102,241,0.05) 0%, rgba(16,185,129,0.05) 100%)',
-            borderRadius: 'var(--radius-lg)',
-            overflow: 'hidden',
-            marginBottom: 'var(--space-4)'
-          }}>
-            {/* Animated Avatars representing the crowd */}
-            {Array.from({ length: Math.min(crowdSize, 100) }).map((_, i) => {
-              const row = Math.floor(i / 10)
-              const col = i % 10
-              const delay = (i * 0.1) % 3
-
-              return (
-                <div
-                  key={i}
-                  style={{
-                    position: 'absolute',
-                    left: `${col * 10}%`,
-                    bottom: `${row * 12}%`,
-                    fontSize: '2rem',
-                    animation: `float 3s ease-in-out infinite`,
-                    animationDelay: `${delay}s`,
-                    opacity: 0.7 + (Math.random() * 0.3),
-                    filter: `hue-rotate(${i * 36}deg)`
-                  }}
-                >
-                  ✊
-                </div>
-              )
-            })}
-
-            {/* Floating Placards Overlay */}
-            {messages.slice(0, 5).map((msg, i) => (
-              <div
-                key={msg.id}
-                style={{
-                  position: 'absolute',
-                  left: `${15 + (i * 15)}%`,
-                  top: `${10 + (i * 15)}%`,
-                  transform: 'rotate(-5deg)',
-                  animation: `float ${3 + i}s ease-in-out infinite`,
-                  animationDelay: `${i * 0.5}s`,
-                  zIndex: 10
-                }}
-              >
-                <div style={{
-                  background: 'white',
-                  padding: 'var(--space-3)',
-                  borderRadius: 'var(--radius-md)',
-                  boxShadow: 'var(--shadow-xl)',
-                  maxWidth: '150px',
-                  border: '3px solid var(--primary)',
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  textAlign: 'center'
-                }}>
-                  {msg.message}
-                </div>
-              </div>
-            ))}
-
-            {/* Live indicator */}
+        {/* Avenue Perspective Visualization */}
+        <div className="card" style={{ minHeight: '700px' }}>
+          <div style={{ marginBottom: 'var(--space-4)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h3 style={{ margin: 0 }}>
+              🛣️ Avenida de la Manifestación
+            </h3>
             <div style={{
-              position: 'absolute',
-              top: 'var(--space-4)',
-              right: 'var(--space-4)',
               background: '#EF4444',
               color: 'white',
-              padding: 'var(--space-2) var(--space-4)',
+              padding: 'var(--space-1) var(--space-3)',
               borderRadius: 'var(--radius-full)',
-              fontSize: '0.875rem',
+              fontSize: '0.75rem',
               fontWeight: 700,
               display: 'flex',
               alignItems: 'center',
-              gap: 'var(--space-2)',
+              gap: 'var(--space-1)',
               animation: 'pulse 2s ease-in-out infinite'
             }}>
               <span style={{
-                width: '8px',
-                height: '8px',
+                width: '6px',
+                height: '6px',
                 borderRadius: '50%',
                 background: 'white',
                 animation: 'pulse 1s ease-in-out infinite'
@@ -311,15 +299,224 @@ function LiveProtestPage() {
             </div>
           </div>
 
+          {/* Avenue View with 3D Perspective */}
           <div style={{
-            textAlign: 'center',
-            padding: 'var(--space-4)',
-            background: 'rgba(99,102,241,0.1)',
+            position: 'relative',
+            height: '500px',
+            background: 'linear-gradient(180deg, #87CEEB 0%, #E0E0E0 70%, #808080 100%)',
             borderRadius: 'var(--radius-lg)',
-            fontSize: '0.875rem',
-            color: 'var(--text-secondary)'
+            overflow: 'hidden',
+            perspective: '1000px',
+            perspectiveOrigin: '50% 30%'
           }}>
-            {crowdSize.toLocaleString()} virtual protesters walking for this cause right now
+            {supporters.length === 0 ? (
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                textAlign: 'center',
+                color: 'var(--text-secondary)'
+              }}>
+                <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🚶</div>
+                <p style={{ fontSize: '1.25rem', fontWeight: 600 }}>
+                  No hay caminantes aún
+                </p>
+                <p style={{ fontSize: '0.875rem' }}>
+                  Sé el primero en caminar por esta causa
+                </p>
+              </div>
+            ) : (
+              <div style={{
+                position: 'absolute',
+                width: '100%',
+                height: '100%',
+                transformStyle: 'preserve-3d',
+                transform: 'rotateX(60deg)',
+                transformOrigin: '50% 100%'
+              }}>
+                {/* Avenue Road */}
+                <div style={{
+                  position: 'absolute',
+                  width: '40%',
+                  height: '200%',
+                  left: '30%',
+                  top: '-100%',
+                  background: 'repeating-linear-gradient(0deg, #404040 0px, #404040 40px, #FFF 40px, #FFF 45px, #404040 45px, #404040 80px)',
+                  transformOrigin: '50% 100%',
+                  boxShadow: 'inset 0 0 50px rgba(0,0,0,0.3)'
+                }}></div>
+
+                {/* Supporters as avatars */}
+                {supporters.map((supporter, index) => {
+                  // Calculate position based on steps
+                  // 0% = back (start), 100% = front (finish line)
+                  const stepsPercent = maxSteps > 0 ? (supporter.steps / maxSteps) * 100 : 0
+
+                  // Visible range based on scroll position
+                  const viewStart = scrollPosition
+                  const viewEnd = scrollPosition + 20 // Show 20% range at a time
+
+                  // Check if this supporter is in the visible range
+                  const isVisible = stepsPercent >= viewStart && stepsPercent <= viewEnd
+
+                  if (!isVisible) return null
+
+                  // Position within the visible 20% range
+                  const relativePosition = ((stepsPercent - viewStart) / 20) * 100
+
+                  // Distance from camera (0 = far, 100 = close)
+                  const distanceFromCamera = relativePosition
+
+                  // Calculate Z position (further back = more negative Z)
+                  const zPosition = -500 + (distanceFromCamera * 5)
+
+                  // Scale based on distance (perspective)
+                  const scale = 0.3 + (distanceFromCamera / 100) * 1.5
+
+                  // Horizontal position (slight variation for realism)
+                  const horizontalOffset = (index % 3 - 1) * 50 // -50, 0, or 50
+
+                  return (
+                    <div
+                      key={supporter.userId}
+                      onMouseEnter={() => setHoveredSupporter(supporter)}
+                      onMouseLeave={() => setHoveredSupporter(null)}
+                      style={{
+                        position: 'absolute',
+                        left: `calc(50% + ${horizontalOffset}px)`,
+                        bottom: '100%',
+                        transform: `translateX(-50%) translateZ(${zPosition}px) scale(${scale}) rotateX(-60deg)`,
+                        fontSize: '2rem',
+                        cursor: 'pointer',
+                        transition: 'transform 0.3s ease',
+                        zIndex: Math.floor(distanceFromCamera),
+                        filter: `brightness(${0.7 + (distanceFromCamera / 100) * 0.5})`
+                      }}
+                    >
+                      ✊
+
+                      {/* Tooltip with message */}
+                      {hoveredSupporter?.userId === supporter.userId && supporter.message && (
+                        <div style={{
+                          position: 'absolute',
+                          bottom: '100%',
+                          left: '50%',
+                          transform: 'translateX(-50%) rotateX(60deg) translateZ(20px)',
+                          background: 'white',
+                          padding: '0.5rem 1rem',
+                          borderRadius: '0.5rem',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                          whiteSpace: 'nowrap',
+                          fontSize: '0.875rem',
+                          fontWeight: 600,
+                          color: 'var(--text-primary)',
+                          border: `2px solid ${cause.color}`,
+                          marginBottom: '0.5rem',
+                          maxWidth: '200px',
+                          whiteSpace: 'normal',
+                          textAlign: 'center',
+                          pointerEvents: 'none'
+                        }}>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                            {supporter.name}
+                          </div>
+                          "{supporter.message}"
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                            {supporter.steps.toLocaleString()} pasos
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Tooltip for supporters without message */}
+                      {hoveredSupporter?.userId === supporter.userId && !supporter.message && (
+                        <div style={{
+                          position: 'absolute',
+                          bottom: '100%',
+                          left: '50%',
+                          transform: 'translateX(-50%) rotateX(60deg) translateZ(20px)',
+                          background: 'white',
+                          padding: '0.5rem 1rem',
+                          borderRadius: '0.5rem',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                          fontSize: '0.875rem',
+                          fontWeight: 600,
+                          color: 'var(--text-primary)',
+                          border: `2px solid ${cause.color}`,
+                          marginBottom: '0.5rem',
+                          textAlign: 'center',
+                          whiteSpace: 'nowrap',
+                          pointerEvents: 'none'
+                        }}>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                            {supporter.name}
+                          </div>
+                          {supporter.steps.toLocaleString()} pasos
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Controls */}
+          <div style={{ marginTop: 'var(--space-4)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-2)' }}>
+              <button
+                onClick={togglePlayPause}
+                className="btn btn-secondary"
+                disabled={supporters.length === 0}
+                style={{ minWidth: '120px' }}
+              >
+                {isPlaying ? <Pause size={20} /> : <Play size={20} />}
+                {isPlaying ? 'Pausar' : 'Recorrer'}
+              </button>
+
+              <div style={{ flex: 1 }}>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  value={scrollPosition}
+                  onChange={handleScrollChange}
+                  disabled={supporters.length === 0}
+                  style={{
+                    width: '100%',
+                    height: '8px',
+                    borderRadius: '4px',
+                    outline: 'none',
+                    opacity: supporters.length === 0 ? 0.5 : 1,
+                    cursor: supporters.length === 0 ? 'not-allowed' : 'pointer'
+                  }}
+                />
+              </div>
+
+              <div style={{
+                minWidth: '80px',
+                textAlign: 'right',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                color: 'var(--text-secondary)'
+              }}>
+                {scrollPosition.toFixed(0)}%
+              </div>
+            </div>
+
+            <div style={{
+              fontSize: '0.75rem',
+              color: 'var(--text-secondary)',
+              textAlign: 'center'
+            }}>
+              {supporters.length > 0
+                ? `Mostrando ${supporters.filter(s => {
+                    const stepsPercent = maxSteps > 0 ? (s.steps / maxSteps) * 100 : 0
+                    return stepsPercent >= scrollPosition && stepsPercent <= scrollPosition + 20
+                  }).length} de ${supporters.length} caminantes`
+                : 'No hay caminantes para mostrar'}
+            </div>
           </div>
         </div>
 
@@ -327,7 +524,7 @@ function LiveProtestPage() {
         <div>
           <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
             <h3 style={{ marginBottom: 'var(--space-4)' }}>
-              📢 Raise Your Placard
+              📢 Tu Pancarta
             </h3>
 
             <form onSubmit={handleSubmitMessage}>
@@ -335,9 +532,9 @@ function LiveProtestPage() {
                 <textarea
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Write your message for this cause..."
+                  placeholder="Escribe tu mensaje para esta causa..."
                   className="form-textarea"
-                  maxLength={500}
+                  maxLength={200}
                   rows={4}
                   style={{ fontSize: '1rem' }}
                 />
@@ -346,7 +543,7 @@ function LiveProtestPage() {
                   color: 'var(--text-secondary)',
                   marginTop: 'var(--space-1)'
                 }}>
-                  {newMessage.length}/500 characters
+                  {newMessage.length}/200 caracteres
                 </div>
               </div>
 
@@ -357,15 +554,27 @@ function LiveProtestPage() {
                 style={{ width: '100%' }}
               >
                 <Send size={20} />
-                {submitting ? 'Posting...' : 'Post Placard'}
+                {submitting ? 'Publicando...' : 'Publicar Pancarta'}
               </button>
             </form>
+
+            <div style={{
+              marginTop: 'var(--space-3)',
+              padding: 'var(--space-2)',
+              background: 'rgba(99,102,241,0.1)',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '0.75rem',
+              color: 'var(--text-secondary)',
+              textAlign: 'center'
+            }}>
+              💡 Pasa el ratón sobre los avatares en la avenida para ver los mensajes
+            </div>
           </div>
 
           {/* Messages Feed */}
           <div className="card">
             <h3 style={{ marginBottom: 'var(--space-4)' }}>
-              Recent Placards ({messages.length})
+              Pancartas Recientes ({messages.length})
             </h3>
 
             <div style={{
@@ -382,7 +591,7 @@ function LiveProtestPage() {
                   color: 'var(--text-secondary)'
                 }}>
                   <div style={{ fontSize: '3rem', marginBottom: 'var(--space-2)' }}>📢</div>
-                  <p>No placards yet. Be the first to raise your voice!</p>
+                  <p>No hay pancartas aún. ¡Sé el primero!</p>
                 </div>
               ) : (
                 messages.map((msg) => (
@@ -464,7 +673,7 @@ function LiveProtestPage() {
                     </div>
 
                     <div style={{
-                      fontSize: '1rem',
+                      fontSize: '0.95rem',
                       fontWeight: 600,
                       lineHeight: 1.5,
                       textAlign: 'center',

@@ -83,6 +83,11 @@ const api = {
     return response.data;
   },
 
+  async getCauseSupportersWithSteps(id) {
+    const response = await axiosInstance.get(`/causes/${id}/supporters-with-steps`);
+    return response.data;
+  },
+
   // Steps
   async recordSteps(steps) {
     const response = await axiosInstance.post('/steps', { steps });
