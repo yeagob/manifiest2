@@ -1,5 +1,6 @@
 import express from 'express';
-import { verifyGoogleToken, requireAuth } from '../middleware/auth.js';
+import jwt from 'jsonwebtoken';
+import { verifyGoogleToken, requireAuth, generateToken } from '../middleware/auth.js';
 import User from '../models/User.js';
 
 const router = express.Router();
@@ -28,25 +29,21 @@ router.post('/email', async (req, res) => {
 
     const user = await User.findOrCreate(userData);
 
-    // Set session
+    // Generate JWT token
+    const token = generateToken(user.id);
+
+    // Set session (for backwards compatibility)
     req.session.userId = user.id;
 
-    // Save session explicitly to ensure cookie is sent
-    req.session.save((err) => {
-      if (err) {
-        console.error('Session save error:', err);
-        return res.status(500).json({ error: 'Failed to create session' });
-      }
+    console.log('✅ Email login successful:', {
+      userId: user.id,
+      email: user.email
+    });
 
-      console.log('✅ Email login successful, session created:', {
-        userId: user.id,
-        sessionId: req.sessionID
-      });
-
-      res.json({
-        user: user.toJSON(),
-        message: 'Login successful'
-      });
+    res.json({
+      user: user.toJSON(),
+      token,
+      message: 'Login successful'
     });
   } catch (error) {
     console.error('Email auth error:', error);
@@ -57,37 +54,33 @@ router.post('/email', async (req, res) => {
 // Google login
 router.post('/google', async (req, res) => {
   try {
-    const { token } = req.body;
+    const { token: googleToken } = req.body;
 
-    if (!token) {
+    if (!googleToken) {
       return res.status(400).json({ error: 'Token is required' });
     }
 
     // Verify Google token
-    const googleData = await verifyGoogleToken(token);
+    const googleData = await verifyGoogleToken(googleToken);
 
     // Find or create user
     const user = await User.findOrCreate(googleData);
 
-    // Set session
+    // Generate JWT token
+    const jwtToken = generateToken(user.id);
+
+    // Set session (for backwards compatibility)
     req.session.userId = user.id;
 
-    // Save session explicitly to ensure cookie is sent
-    req.session.save((err) => {
-      if (err) {
-        console.error('Session save error:', err);
-        return res.status(500).json({ error: 'Failed to create session' });
-      }
+    console.log('✅ Google login successful:', {
+      userId: user.id,
+      email: user.email
+    });
 
-      console.log('✅ Google login successful, session created:', {
-        userId: user.id,
-        sessionId: req.sessionID
-      });
-
-      res.json({
-        user: user.toJSON(),
-        message: 'Login successful'
-      });
+    res.json({
+      user: user.toJSON(),
+      token: jwtToken,
+      message: 'Login successful'
     });
   } catch (error) {
     console.error('Google auth error:', error);
@@ -98,9 +91,10 @@ router.post('/google', async (req, res) => {
 // Get current user
 router.get('/me', requireAuth, async (req, res) => {
   try {
-    const user = await User.findById(req.session.userId);
+    const userId = req.userId || req.session?.userId;
+    const user = await User.findById(userId);
     if (!user) {
-      req.session.destroy();
+      if (req.session) req.session.destroy();
       return res.status(404).json({ error: 'User not found' });
     }
     res.json(user.toJSON());
@@ -121,9 +115,28 @@ router.post('/logout', requireAuth, (req, res) => {
 
 // Check auth status
 router.get('/status', (req, res) => {
+  // Check JWT token first
+  const authHeader = req.headers.authorization;
+  let userId = null;
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'protest-simulator-jwt-secret-key-change-in-production');
+      userId = decoded.userId;
+    } catch (error) {
+      // Token invalid, check session
+    }
+  }
+
+  // Fallback to session
+  if (!userId && req.session?.userId) {
+    userId = req.session.userId;
+  }
+
   res.json({
-    authenticated: !!req.session.userId,
-    userId: req.session.userId || null
+    authenticated: !!userId,
+    userId: userId
   });
 });
 
