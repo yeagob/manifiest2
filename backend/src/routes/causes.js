@@ -51,19 +51,24 @@ router.post('/', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Title and description are required' });
     }
 
+    // Use userId from token or session
+    const userId = req.userId || req.session?.userId;
+
     const cause = await Cause.create({
       title,
       description,
       category,
       icon,
       color,
-      createdBy: req.session.userId,
-      supporters: [req.session.userId] // Creator automatically supports
+      createdBy: userId,
+      supporters: [userId] // Creator automatically supports
     });
 
     // Add to user's supported causes
-    const user = await User.findById(req.session.userId);
-    await user.supportCause(cause.id, 1); // Default: every step
+    const user = await User.findById(userId);
+    if (user) {
+      await user.supportCause(cause.id, 1); // Default: every step
+    }
 
     res.status(201).json(cause.toJSON());
   } catch (error) {
@@ -80,8 +85,10 @@ router.put('/:id', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Cause not found' });
     }
 
+    const userId = req.userId || req.session?.userId;
+
     // Only creator can update
-    if (cause.createdBy !== req.session.userId) {
+    if (cause.createdBy !== userId) {
       return res.status(403).json({ error: 'Not authorized to update this cause' });
     }
 
@@ -105,16 +112,19 @@ router.put('/:id', requireAuth, async (req, res) => {
 router.post('/:id/support', requireAuth, async (req, res) => {
   try {
     const { interval = 1 } = req.body; // Default: every step
+    const userId = req.userId || req.session?.userId;
 
     const cause = await Cause.findById(req.params.id);
     if (!cause) {
       return res.status(404).json({ error: 'Cause not found' });
     }
 
-    await cause.addSupporter(req.session.userId);
+    await cause.addSupporter(userId);
 
-    const user = await User.findById(req.session.userId);
-    await user.supportCause(cause.id, interval);
+    const user = await User.findById(userId);
+    if (user) {
+      await user.supportCause(cause.id, interval);
+    }
 
     res.json({
       message: 'Cause supported successfully',
@@ -129,15 +139,19 @@ router.post('/:id/support', requireAuth, async (req, res) => {
 // Unsupport a cause
 router.post('/:id/unsupport', requireAuth, async (req, res) => {
   try {
+    const userId = req.userId || req.session?.userId;
+
     const cause = await Cause.findById(req.params.id);
     if (!cause) {
       return res.status(404).json({ error: 'Cause not found' });
     }
 
-    await cause.removeSupporter(req.session.userId);
+    await cause.removeSupporter(userId);
 
-    const user = await User.findById(req.session.userId);
-    await user.unsupportCause(cause.id);
+    const user = await User.findById(userId);
+    if (user) {
+      await user.unsupportCause(cause.id);
+    }
 
     res.json({
       message: 'Cause unsupported successfully',
@@ -157,7 +171,8 @@ router.put('/:id/distribution', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Invalid interval' });
     }
 
-    const user = await User.findById(req.session.userId);
+    const userId = req.userId || req.session?.userId;
+    const user = await User.findById(userId);
     await user.updateStepDistribution(req.params.id, interval);
 
     res.json({
@@ -177,8 +192,10 @@ router.delete('/:id', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Cause not found' });
     }
 
+    const userId = req.userId || req.session?.userId;
+
     // Only creator can delete
-    if (cause.createdBy !== req.session.userId) {
+    if (cause.createdBy !== userId) {
       return res.status(403).json({ error: 'Not authorized to delete this cause' });
     }
 
