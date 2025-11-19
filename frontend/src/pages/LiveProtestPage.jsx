@@ -407,7 +407,6 @@ function LiveProtestPage() {
                           padding: '0.5rem 1rem',
                           borderRadius: '0.5rem',
                           boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                          whiteSpace: 'nowrap',
                           fontSize: '0.875rem',
                           fontWeight: 600,
                           color: 'var(--text-primary)',
