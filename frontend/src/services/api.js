@@ -130,8 +130,8 @@ const api = {
     return response.data;
   },
 
-  async updateAvatar(emoji, color) {
-    const response = await axiosInstance.put('/users/avatar', { emoji, color });
+  async updateAvatar(config) {
+    const response = await axiosInstance.put('/users/avatar', config);
     return response.data;
   },
 

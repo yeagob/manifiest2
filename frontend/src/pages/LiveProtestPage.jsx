@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { ArrowLeft, Users, Footprints, Heart, Send, ThumbsUp, Play, Pause } from 'lucide-react'
 import api from '../services/api'
 import { useAuthStore } from '../context/store'
+import ProtestAvatar from '../components/ProtestAvatar'
 
 function LiveProtestPage() {
   const { causeId } = useParams()
@@ -387,14 +388,13 @@ function LiveProtestPage() {
                         left: `calc(50% + ${horizontalOffset}px)`,
                         bottom: '100%',
                         transform: `translateX(-50%) translateZ(${zPosition}px) scale(${scale}) rotateX(-60deg)`,
-                        fontSize: '2rem',
                         cursor: 'pointer',
                         transition: 'transform 0.3s ease',
                         zIndex: Math.floor(distanceFromCamera),
                         filter: `brightness(${0.7 + (distanceFromCamera / 100) * 0.5})`
                       }}
                     >
-                      ✊
+                      <ProtestAvatar config={supporter.avatar} size={40} />
 
                       {/* Tooltip with message */}
                       {hoveredSupporter?.userId === supporter.userId && supporter.message && (

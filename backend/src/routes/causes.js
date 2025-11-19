@@ -229,6 +229,7 @@ router.get('/:id/supporters-with-steps', async (req, res) => {
           name: user.name,
           email: user.email,
           picture: user.picture,
+          avatar: user.avatar, // Include SVG avatar configuration
           steps: userStepsMap[userId],
           message: latestMessage ? latestMessage.message : null,
           messageId: latestMessage ? latestMessage.id : null

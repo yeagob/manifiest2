@@ -16,10 +16,14 @@ class User {
     this.causesSupported = data.causesSupported || []; // array of cause IDs
     this.stepDistribution = data.stepDistribution || {}; // { causeId: { interval: 1, count: 0 } }
 
-    // Avatar customization
+    // SVG Avatar configuration
     this.avatar = data.avatar || {
-      emoji: '✊', // Default protest symbol
-      color: '#6366F1' // Default indigo color
+      base: 'face',
+      eyes: 'determined',
+      mouth: 'shouting',
+      accessory: 'none',
+      bgColor: '#3B82F6',
+      skinTone: 'tone3'
     };
   }
 
@@ -66,10 +70,15 @@ class User {
     return this;
   }
 
-  async updateAvatar(emoji, color) {
+  async updateAvatar(config) {
+    // Update SVG avatar configuration
     this.avatar = {
-      emoji: emoji || this.avatar.emoji,
-      color: color || this.avatar.color
+      base: config.base || this.avatar.base,
+      eyes: config.eyes || this.avatar.eyes,
+      mouth: config.mouth || this.avatar.mouth,
+      accessory: config.accessory || this.avatar.accessory,
+      bgColor: config.bgColor || this.avatar.bgColor,
+      skinTone: config.skinTone || this.avatar.skinTone
     };
     await this.save();
     return this;

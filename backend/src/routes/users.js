@@ -54,18 +54,21 @@ router.put('/avatar', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const { emoji, color } = req.body;
+    const config = req.body;
 
-    if (!emoji) {
-      return res.status(400).json({ error: 'Emoji is required' });
+    // Validate that at least one avatar property is provided
+    const validProps = ['base', 'eyes', 'mouth', 'accessory', 'bgColor', 'skinTone'];
+    const hasValidProp = validProps.some(prop => config[prop] !== undefined);
+
+    if (!hasValidProp) {
+      return res.status(400).json({ error: 'Avatar configuration is required' });
     }
 
-    await user.updateAvatar(emoji, color);
+    await user.updateAvatar(config);
 
     console.log('✅ Avatar updated:', {
       userId: user.id,
-      emoji,
-      color
+      config
     });
 
     res.json({

@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { useAuthStore, useStepsStore, useCausesStore } from '../context/store'
 import { Footprints, Heart, TrendingUp, Award, Edit3 } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts'
-import AvatarEditor from '../components/AvatarEditor'
+import ProtestAvatar from '../components/ProtestAvatar'
+import SVGAvatarEditor from '../components/SVGAvatarEditor'
+import api from '../services/api'
 
 function ProfilePage() {
   const { user, setUser } = useAuthStore()
@@ -51,18 +53,36 @@ function ProfilePage() {
           gap: '2rem',
           flexWrap: 'wrap'
         }}>
-          {user?.picture && (
-            <img
-              src={user.picture}
-              alt={user.name}
+          {/* Avatar */}
+          <div style={{ position: 'relative' }}>
+            <div style={{
+              padding: '0.5rem',
+              border: '4px solid var(--primary)',
+              borderRadius: '1rem',
+              backgroundColor: 'var(--bg-secondary)'
+            }}>
+              <ProtestAvatar config={user?.avatar} size={120} />
+            </div>
+            <button
+              onClick={() => setShowAvatarEditor(true)}
+              className="btn btn-primary btn-sm"
               style={{
-                width: '120px',
-                height: '120px',
+                position: 'absolute',
+                bottom: '0',
+                right: '0',
+                padding: '0.5rem',
                 borderRadius: '50%',
-                border: '4px solid var(--primary)'
+                width: '40px',
+                height: '40px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
               }}
-            />
-          )}
+              title="Editar Avatar"
+            >
+              <Edit3 size={16} />
+            </button>
+          </div>
           <div style={{ flex: 1, minWidth: '200px' }}>
             <h2 style={{ marginBottom: '0.5rem' }}>{user?.name}</h2>
             <p style={{
@@ -298,6 +318,22 @@ function ProfilePage() {
           </a>
         </div>
       )}
+
+      {/* Avatar Editor Modal */}
+      <SVGAvatarEditor
+        isOpen={showAvatarEditor}
+        onClose={() => setShowAvatarEditor(false)}
+        currentAvatar={user?.avatar}
+        onSave={async (newAvatar) => {
+          try {
+            await api.updateAvatar(newAvatar)
+            setUser({ ...user, avatar: newAvatar })
+            setShowAvatarEditor(false)
+          } catch (error) {
+            console.error('Failed to save avatar:', error)
+          }
+        }}
+      />
     </div>
   )
 }
