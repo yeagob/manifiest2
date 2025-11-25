@@ -28,18 +28,7 @@ export const requireAuth = (req, res, next) => {
     }
   }
 
-  // Fallback to session-based auth
-  if (req.session?.userId) {
-    req.userId = req.session.userId;
-    return next();
-  }
-
-  console.warn('⚠️ Auth required but no token or session found:', {
-    hasAuthHeader: !!authHeader,
-    hasSession: !!req.session,
-    sessionId: req.sessionID,
-    cookies: req.cookies
-  });
+  console.warn('⚠️ Auth required but no valid token found');
 
   return res.status(401).json({
     error: 'Authentication required',
@@ -66,6 +55,13 @@ export const verifyGoogleToken = async (token) => {
 };
 
 export const optionalAuth = (req, res, next) => {
-  // Just pass through, but attach user if available
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+    const decoded = verifyToken(token);
+    if (decoded) {
+      req.userId = decoded.userId;
+    }
+  }
   next();
 };

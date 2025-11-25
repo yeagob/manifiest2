@@ -1,15 +1,13 @@
 import express from 'express';
 import { requireAuth } from '../middleware/auth.js';
-import Message from '../models/Message.js';
-import User from '../models/User.js';
-import Cause from '../models/Cause.js';
+import MessageService from '../services/MessageService.js';
 
 const router = express.Router();
 
 // Get messages for a cause
 router.get('/cause/:causeId', async (req, res) => {
   try {
-    const messages = await Message.findByCause(req.params.causeId);
+    const messages = await MessageService.getByCause(req.params.causeId);
     res.json(messages.map(m => m.toJSON()));
   } catch (error) {
     console.error('Get messages error:', error);
@@ -21,7 +19,7 @@ router.get('/cause/:causeId', async (req, res) => {
 router.get('/cause/:causeId/top', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 10;
-    const messages = await Message.getMostLikedByCause(req.params.causeId, limit);
+    const messages = await MessageService.getMostLiked(req.params.causeId, limit);
     res.json(messages.map(m => m.toJSON()));
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch top messages' });
@@ -31,7 +29,7 @@ router.get('/cause/:causeId/top', async (req, res) => {
 // Get user's messages
 router.get('/user/:userId', async (req, res) => {
   try {
-    const messages = await Message.findByUser(req.params.userId);
+    const messages = await MessageService.getByUser(req.params.userId);
     res.json(messages.map(m => m.toJSON()));
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch user messages' });
@@ -51,31 +49,17 @@ router.post('/', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Message is too long (max 500 characters)' });
     }
 
-    // Verify cause exists
-    const cause = await Cause.findById(causeId);
-    if (!cause) {
-      return res.status(404).json({ error: 'Cause not found' });
-    }
-
-    // Get user info
-    const user = await User.findById(req.session.userId);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    // Create message
-    const newMessage = await Message.create({
+    const newMessage = await MessageService.createMessage(req.userId, {
       causeId,
-      userId: user.id,
-      userName: user.name,
-      userPicture: user.picture,
       message,
-      type: type || 'placard'
+      type
     });
 
     res.status(201).json(newMessage.toJSON());
   } catch (error) {
     console.error('Create message error:', error);
+    if (error.message === 'Cause not found') return res.status(404).json({ error: 'Cause not found' });
+    if (error.message === 'User not found') return res.status(404).json({ error: 'User not found' });
     res.status(500).json({ error: 'Failed to create message' });
   }
 });
@@ -83,14 +67,10 @@ router.post('/', requireAuth, async (req, res) => {
 // Like a message
 router.post('/:id/like', requireAuth, async (req, res) => {
   try {
-    const message = await Message.findById(req.params.id);
-    if (!message) {
-      return res.status(404).json({ error: 'Message not found' });
-    }
-
-    await message.addLike(req.session.userId);
+    const message = await MessageService.likeMessage(req.userId, req.params.id);
     res.json(message.toJSON());
   } catch (error) {
+    if (error.message === 'Message not found') return res.status(404).json({ error: 'Message not found' });
     res.status(500).json({ error: 'Failed to like message' });
   }
 });
@@ -98,14 +78,10 @@ router.post('/:id/like', requireAuth, async (req, res) => {
 // Unlike a message
 router.delete('/:id/like', requireAuth, async (req, res) => {
   try {
-    const message = await Message.findById(req.params.id);
-    if (!message) {
-      return res.status(404).json({ error: 'Message not found' });
-    }
-
-    await message.removeLike(req.session.userId);
+    const message = await MessageService.unlikeMessage(req.userId, req.params.id);
     res.json(message.toJSON());
   } catch (error) {
+    if (error.message === 'Message not found') return res.status(404).json({ error: 'Message not found' });
     res.status(500).json({ error: 'Failed to unlike message' });
   }
 });
@@ -113,19 +89,11 @@ router.delete('/:id/like', requireAuth, async (req, res) => {
 // Delete a message (only by creator)
 router.delete('/:id', requireAuth, async (req, res) => {
   try {
-    const message = await Message.findById(req.params.id);
-    if (!message) {
-      return res.status(404).json({ error: 'Message not found' });
-    }
-
-    // Only creator can delete
-    if (message.userId !== req.session.userId) {
-      return res.status(403).json({ error: 'Not authorized to delete this message' });
-    }
-
-    await message.delete();
+    await MessageService.deleteMessage(req.userId, req.params.id);
     res.json({ message: 'Message deleted successfully' });
   } catch (error) {
+    if (error.message === 'Message not found') return res.status(404).json({ error: 'Message not found' });
+    if (error.message === 'Not authorized') return res.status(403).json({ error: 'Not authorized' });
     res.status(500).json({ error: 'Failed to delete message' });
   }
 });

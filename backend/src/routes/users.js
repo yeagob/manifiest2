@@ -1,26 +1,20 @@
 import express from 'express';
 import { requireAuth } from '../middleware/auth.js';
-import User from '../models/User.js';
-import Cause from '../models/Cause.js';
+import UserService from '../services/UserService.js';
 
 const router = express.Router();
 
 // Get user profile
 router.get('/profile', requireAuth, async (req, res) => {
   try {
-    const user = await User.findById(req.session.userId);
-    if (!user) {
+    const profile = await UserService.getUserProfile(req.userId);
+    if (!profile) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Get causes user supports
-    const causes = await Promise.all(
-      user.causesSupported.map(causeId => Cause.findById(causeId))
-    );
-
     res.json({
-      user: user.toJSON(),
-      causes: causes.filter(c => c !== null).map(c => c.toJSON())
+      user: profile.user.toJSON(),
+      causes: profile.causes.map(c => c.toJSON())
     });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch profile' });
@@ -30,18 +24,13 @@ router.get('/profile', requireAuth, async (req, res) => {
 // Update user profile
 router.put('/profile', requireAuth, async (req, res) => {
   try {
-    const user = await User.findById(req.session.userId);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
     const { name, picture } = req.body;
-    if (name) user.name = name;
-    if (picture) user.picture = picture;
-
-    await user.save();
+    const user = await UserService.updateProfile(req.userId, { name, picture });
     res.json(user.toJSON());
   } catch (error) {
+    if (error.message === 'User not found') {
+      return res.status(404).json({ error: 'User not found' });
+    }
     res.status(500).json({ error: 'Failed to update profile' });
   }
 });
@@ -49,11 +38,6 @@ router.put('/profile', requireAuth, async (req, res) => {
 // Update user avatar
 router.put('/avatar', requireAuth, async (req, res) => {
   try {
-    const user = await User.findById(req.session.userId);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
     const config = req.body;
 
     // Validate that at least one avatar property is provided
@@ -64,7 +48,7 @@ router.put('/avatar', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Avatar configuration is required' });
     }
 
-    await user.updateAvatar(config);
+    const user = await UserService.updateAvatar(req.userId, config);
 
     console.log('✅ Avatar updated:', {
       userId: user.id,
@@ -84,7 +68,7 @@ router.put('/avatar', requireAuth, async (req, res) => {
 // Get user's supported causes
 router.get('/causes', requireAuth, async (req, res) => {
   try {
-    const causes = await Cause.findByUser(req.session.userId);
+    const causes = await UserService.getUserCauses(req.userId);
     res.json(causes.map(c => c.toJSON()));
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch user causes' });

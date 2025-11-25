@@ -1,11 +1,11 @@
 import express from 'express';
-import jwt from 'jsonwebtoken';
-import { verifyGoogleToken, requireAuth, generateToken } from '../middleware/auth.js';
-import User from '../models/User.js';
+import { requireAuth, optionalAuth } from '../middleware/auth.js';
+import AuthService from '../services/AuthService.js';
+import UserService from '../services/UserService.js';
 
 const router = express.Router();
 
-// Email login (simple MVP authentication)
+// Email login
 router.post('/email', async (req, res) => {
   try {
     const { email, name } = req.body;
@@ -14,26 +14,7 @@ router.post('/email', async (req, res) => {
       return res.status(400).json({ error: 'Email is required' });
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ error: 'Invalid email format' });
-    }
-
-    // Find or create user with email
-    const userData = {
-      email: email.toLowerCase(),
-      name: name || email.split('@')[0], // Use email prefix as name if not provided
-      picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(name || email.split('@')[0])}&background=6366F1&color=fff`
-    };
-
-    const user = await User.findOrCreate(userData);
-
-    // Generate JWT token
-    const token = generateToken(user.id);
-
-    // Set session (for backwards compatibility)
-    req.session.userId = user.id;
+    const { user, token } = await AuthService.loginWithEmail(email, name);
 
     console.log('✅ Email login successful:', {
       userId: user.id,
@@ -60,17 +41,7 @@ router.post('/google', async (req, res) => {
       return res.status(400).json({ error: 'Token is required' });
     }
 
-    // Verify Google token
-    const googleData = await verifyGoogleToken(googleToken);
-
-    // Find or create user
-    const user = await User.findOrCreate(googleData);
-
-    // Generate JWT token
-    const jwtToken = generateToken(user.id);
-
-    // Set session (for backwards compatibility)
-    req.session.userId = user.id;
+    const { user, token } = await AuthService.loginWithGoogle(googleToken);
 
     console.log('✅ Google login successful:', {
       userId: user.id,
@@ -79,7 +50,7 @@ router.post('/google', async (req, res) => {
 
     res.json({
       user: user.toJSON(),
-      token: jwtToken,
+      token,
       message: 'Login successful'
     });
   } catch (error) {
@@ -91,10 +62,8 @@ router.post('/google', async (req, res) => {
 // Get current user
 router.get('/me', requireAuth, async (req, res) => {
   try {
-    const userId = req.userId || req.session?.userId;
-    const user = await User.findById(userId);
+    const { user } = await UserService.getUserProfile(req.userId);
     if (!user) {
-      if (req.session) req.session.destroy();
       return res.status(404).json({ error: 'User not found' });
     }
     res.json(user.toJSON());
@@ -104,34 +73,23 @@ router.get('/me', requireAuth, async (req, res) => {
 });
 
 // Logout
-router.post('/logout', requireAuth, (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      return res.status(500).json({ error: 'Logout failed' });
-    }
-    res.json({ message: 'Logout successful' });
-  });
+router.post('/logout', optionalAuth, (req, res) => {
+  // Stateless JWT auth doesn't require server-side logout
+  // Client should remove the token
+  res.json({ message: 'Logout successful' });
 });
 
 // Check auth status
 router.get('/status', (req, res) => {
-  // Check JWT token first
   const authHeader = req.headers.authorization;
   let userId = null;
 
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.substring(7);
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'protest-simulator-jwt-secret-key-change-in-production');
+    const decoded = AuthService.verifyToken(token);
+    if (decoded) {
       userId = decoded.userId;
-    } catch (error) {
-      // Token invalid, check session
     }
-  }
-
-  // Fallback to session
-  if (!userId && req.session?.userId) {
-    userId = req.session.userId;
   }
 
   res.json({

@@ -1,7 +1,4 @@
 import { v4 as uuidv4 } from 'uuid';
-import StorageService from '../services/storage.js';
-
-const storage = new StorageService('users');
 
 class User {
   constructor(data) {
@@ -27,63 +24,6 @@ class User {
     };
   }
 
-  async save() {
-    this.updatedAt = new Date().toISOString();
-    await storage.write(this.id, this);
-    return this;
-  }
-
-  async delete() {
-    return storage.delete(this.id);
-  }
-
-  async addSteps(count) {
-    this.totalSteps += count;
-    await this.save();
-    return this;
-  }
-
-  async supportCause(causeId, interval = 1) {
-    if (!this.causesSupported.includes(causeId)) {
-      this.causesSupported.push(causeId);
-    }
-    this.stepDistribution[causeId] = {
-      interval: interval, // every N steps goes to this cause
-      count: this.stepDistribution[causeId]?.count || 0
-    };
-    await this.save();
-    return this;
-  }
-
-  async unsupportCause(causeId) {
-    this.causesSupported = this.causesSupported.filter(id => id !== causeId);
-    delete this.stepDistribution[causeId];
-    await this.save();
-    return this;
-  }
-
-  async updateStepDistribution(causeId, interval) {
-    if (this.stepDistribution[causeId]) {
-      this.stepDistribution[causeId].interval = interval;
-      await this.save();
-    }
-    return this;
-  }
-
-  async updateAvatar(config) {
-    // Update SVG avatar configuration
-    this.avatar = {
-      base: config.base || this.avatar.base,
-      eyes: config.eyes || this.avatar.eyes,
-      mouth: config.mouth || this.avatar.mouth,
-      accessory: config.accessory || this.avatar.accessory,
-      bgColor: config.bgColor || this.avatar.bgColor,
-      skinTone: config.skinTone || this.avatar.skinTone
-    };
-    await this.save();
-    return this;
-  }
-
   toJSON() {
     return {
       id: this.id,
@@ -98,47 +38,6 @@ class User {
       stepDistribution: this.stepDistribution,
       avatar: this.avatar
     };
-  }
-
-  static async findById(id) {
-    const data = await storage.read(id);
-    return data ? new User(data) : null;
-  }
-
-  static async findByEmail(email) {
-    const all = await storage.list();
-    const userData = all.find(user => user.email === email);
-    return userData ? new User(userData) : null;
-  }
-
-  static async findByGoogleId(googleId) {
-    const all = await storage.list();
-    const userData = all.find(user => user.googleId === googleId);
-    return userData ? new User(userData) : null;
-  }
-
-  static async findAll() {
-    const items = await storage.list();
-    return items.map(data => new User(data));
-  }
-
-  static async create(data) {
-    const user = new User(data);
-    await user.save();
-    return user;
-  }
-
-  static async findOrCreate(googleData) {
-    let user = await this.findByGoogleId(googleData.googleId);
-    if (!user) {
-      user = await this.create({
-        email: googleData.email,
-        name: googleData.name,
-        picture: googleData.picture,
-        googleId: googleData.googleId
-      });
-    }
-    return user;
   }
 }
 
