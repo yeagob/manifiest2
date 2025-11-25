@@ -10,15 +10,35 @@ const axiosInstance = axios.create({
   }
 });
 
+// Add request interceptor to include JWT token
+axiosInstance.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 const api = {
   // Auth
   async loginWithEmail(email, name) {
     const response = await axiosInstance.post('/auth/email', { email, name });
+    if (response.data.token) {
+      localStorage.setItem('authToken', response.data.token);
+    }
     return response.data.user;
   },
 
   async loginWithGoogle(token) {
     const response = await axiosInstance.post('/auth/google', { token });
+    if (response.data.token) {
+      localStorage.setItem('authToken', response.data.token);
+    }
     return response.data.user;
   },
 
@@ -29,6 +49,7 @@ const api = {
 
   async logout() {
     const response = await axiosInstance.post('/auth/logout');
+    localStorage.removeItem('authToken');
     return response.data;
   },
 
