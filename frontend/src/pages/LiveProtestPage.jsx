@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, Users, Footprints, Heart, Send, ThumbsUp, Play, Pause } from 'lucide-react'
+import { ArrowLeft, Users, Footprints, Heart, Send, ThumbsUp } from 'lucide-react'
 import api from '../services/api'
 import { useAuthStore } from '../context/store'
-import AvatarSVG from '../components/AvatarSVG'
+import ProtestScene from '../components/ProtestScene'
 
 function LiveProtestPage() {
   const { causeId } = useParams()
@@ -17,10 +17,9 @@ function LiveProtestPage() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
 
-  // Avenue visualization state
-  const [scrollPosition, setScrollPosition] = useState(0) // 0-100%
+  // Scene state
+  const [cameraPosition, setCameraPosition] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
-  const [hoveredSupporter, setHoveredSupporter] = useState(null)
   const animationRef = useRef(null)
 
   useEffect(() => {
@@ -33,22 +32,24 @@ function LiveProtestPage() {
   // Auto-scroll animation
   useEffect(() => {
     if (isPlaying) {
-      const duration = 30000 // 30 seconds to go from 0 to 100%
+      const duration = 60000 // 60 seconds to walk the whole length
       const startTime = Date.now()
-      const startPosition = scrollPosition
+      const startPosition = cameraPosition
 
       const animate = () => {
         const elapsed = Date.now() - startTime
-        const progress = Math.min((elapsed / duration), 1)
-        const newPosition = startPosition + ((100 - startPosition) * progress)
+        // Calculate new position based on time
+        // Loop back to 0 if we reach 100
+        let newPosition = startPosition + ((elapsed / duration) * 100)
 
-        setScrollPosition(newPosition)
-
-        if (newPosition < 100) {
-          animationRef.current = requestAnimationFrame(animate)
-        } else {
-          setIsPlaying(false)
+        if (newPosition >= 100) {
+          newPosition = newPosition % 100
+          // Reset start time to create continuous loop effect without jump if needed,
+          // but for now simple loop is fine
         }
+
+        setCameraPosition(newPosition)
+        animationRef.current = requestAnimationFrame(animate)
       }
 
       animationRef.current = requestAnimationFrame(animate)
@@ -62,7 +63,8 @@ function LiveProtestPage() {
   }, [isPlaying])
 
   const loadData = async () => {
-    setLoading(true)
+    // Don't set loading true on background refreshes to avoid flickering
+    if (!cause) setLoading(true)
     try {
       await Promise.all([loadCause(), loadSupporters(), loadMessages()])
     } finally {
@@ -138,13 +140,9 @@ function LiveProtestPage() {
     }
   }
 
-  const togglePlayPause = () => {
-    setIsPlaying(!isPlaying)
-  }
-
-  const handleScrollChange = (e) => {
-    setScrollPosition(parseFloat(e.target.value))
-    setIsPlaying(false) // Stop animation when manually scrolling
+  const handleCameraChange = (newPos) => {
+    setCameraPosition(newPos)
+    setIsPlaying(false) // Stop auto-play if user manually scrubs
   }
 
   if (loading || !cause) {
@@ -271,252 +269,30 @@ function LiveProtestPage() {
         gap: 'var(--space-6)',
         alignItems: 'start'
       }}>
-        {/* Avenue Perspective Visualization */}
-        <div className="card" style={{ minHeight: '700px' }}>
-          <div style={{ marginBottom: 'var(--space-4)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <h3 style={{ margin: 0 }}>
+        {/* New 3D Protest Scene */}
+        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)' }}>
+            <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               🛣️ Avenida de la Manifestación
-            </h3>
-            <div style={{
-              background: '#EF4444',
-              color: 'white',
-              padding: 'var(--space-1) var(--space-3)',
-              borderRadius: 'var(--radius-full)',
-              fontSize: '0.75rem',
-              fontWeight: 700,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--space-1)',
-              animation: 'pulse 2s ease-in-out infinite'
-            }}>
               <span style={{
-                width: '6px',
-                height: '6px',
-                borderRadius: '50%',
-                background: 'white',
-                animation: 'pulse 1s ease-in-out infinite'
-              }} />
-              LIVE
-            </div>
+                background: '#EF4444',
+                color: 'white',
+                padding: '2px 8px',
+                borderRadius: '12px',
+                fontSize: '0.75rem',
+                animation: 'pulse 2s infinite'
+              }}>LIVE</span>
+            </h3>
           </div>
 
-          {/* Avenue View with 3D Perspective */}
-          <div style={{
-            position: 'relative',
-            height: '500px',
-            background: 'linear-gradient(180deg, #87CEEB 0%, #E0E0E0 70%, #808080 100%)',
-            borderRadius: 'var(--radius-lg)',
-            overflow: 'hidden',
-            perspective: '1000px',
-            perspectiveOrigin: '50% 30%'
-          }}>
-            {supporters.length === 0 ? (
-              <div style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                textAlign: 'center',
-                color: 'var(--text-secondary)'
-              }}>
-                <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🚶</div>
-                <p style={{ fontSize: '1.25rem', fontWeight: 600 }}>
-                  No hay caminantes aún
-                </p>
-                <p style={{ fontSize: '0.875rem' }}>
-                  Sé el primero en caminar por esta causa
-                </p>
-              </div>
-            ) : (
-              <div style={{
-                position: 'absolute',
-                width: '100%',
-                height: '100%',
-                transformStyle: 'preserve-3d',
-                transform: 'rotateX(60deg)',
-                transformOrigin: '50% 100%'
-              }}>
-                {/* Avenue Road */}
-                <div style={{
-                  position: 'absolute',
-                  width: '40%',
-                  height: '200%',
-                  left: '30%',
-                  top: '-100%',
-                  background: 'repeating-linear-gradient(0deg, #404040 0px, #404040 40px, #FFF 40px, #FFF 45px, #404040 45px, #404040 80px)',
-                  transformOrigin: '50% 100%',
-                  boxShadow: 'inset 0 0 50px rgba(0,0,0,0.3)'
-                }}></div>
-
-                {/* Supporters as avatars */}
-                {supporters.map((supporter, index) => {
-                  // Calculate position based on steps
-                  // 0% = back (start), 100% = front (finish line)
-                  const stepsPercent = maxSteps > 0 ? (supporter.steps / maxSteps) * 100 : 0
-
-                  // Visible range based on scroll position
-                  const viewStart = scrollPosition
-                  const viewEnd = scrollPosition + 20 // Show 20% range at a time
-
-                  // Check if this supporter is in the visible range
-                  const isVisible = stepsPercent >= viewStart && stepsPercent <= viewEnd
-
-                  if (!isVisible) return null
-
-                  // Position within the visible 20% range
-                  const relativePosition = ((stepsPercent - viewStart) / 20) * 100
-
-                  // Distance from camera (0 = far, 100 = close)
-                  const distanceFromCamera = relativePosition
-
-                  // Calculate Z position (further back = more negative Z)
-                  const zPosition = -500 + (distanceFromCamera * 5)
-
-                  // Scale based on distance (perspective)
-                  const scale = 0.3 + (distanceFromCamera / 100) * 1.5
-
-                  // Horizontal position (slight variation for realism)
-                  const horizontalOffset = (index % 3 - 1) * 50 // -50, 0, or 50
-
-                  return (
-                    <div
-                      key={supporter.userId}
-                      onMouseEnter={() => setHoveredSupporter(supporter)}
-                      onMouseLeave={() => setHoveredSupporter(null)}
-                      style={{
-                        position: 'absolute',
-                        left: `calc(50% + ${horizontalOffset}px)`,
-                        bottom: '100%',
-                        transform: `translateX(-50%) translateZ(${zPosition}px) scale(${scale}) rotateX(-60deg)`,
-                        cursor: 'pointer',
-                        transition: 'transform 0.3s ease',
-                        zIndex: Math.floor(distanceFromCamera),
-                        filter: `brightness(${0.7 + (distanceFromCamera / 100) * 0.5})`
-                      }}
-                    >
-                      <AvatarSVG config={supporter.avatar} size={40} />
-
-                      {/* Tooltip with message */}
-                      {hoveredSupporter?.userId === supporter.userId && supporter.message && (
-                        <div style={{
-                          position: 'absolute',
-                          bottom: '100%',
-                          left: '50%',
-                          transform: 'translateX(-50%) rotateX(60deg) translateZ(20px)',
-                          background: 'white',
-                          padding: '0.5rem 1rem',
-                          borderRadius: '0.5rem',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                          fontSize: '0.875rem',
-                          fontWeight: 600,
-                          color: 'var(--text-primary)',
-                          border: `2px solid ${cause.color}`,
-                          marginBottom: '0.5rem',
-                          maxWidth: '200px',
-                          whiteSpace: 'normal',
-                          textAlign: 'center',
-                          pointerEvents: 'none'
-                        }}>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                            {supporter.name}
-                          </div>
-                          "{supporter.message}"
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-                            {supporter.steps.toLocaleString()} pasos
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Tooltip for supporters without message */}
-                      {hoveredSupporter?.userId === supporter.userId && !supporter.message && (
-                        <div style={{
-                          position: 'absolute',
-                          bottom: '100%',
-                          left: '50%',
-                          transform: 'translateX(-50%) rotateX(60deg) translateZ(20px)',
-                          background: 'white',
-                          padding: '0.5rem 1rem',
-                          borderRadius: '0.5rem',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                          fontSize: '0.875rem',
-                          fontWeight: 600,
-                          color: 'var(--text-primary)',
-                          border: `2px solid ${cause.color}`,
-                          marginBottom: '0.5rem',
-                          textAlign: 'center',
-                          whiteSpace: 'nowrap',
-                          pointerEvents: 'none'
-                        }}>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                            {supporter.name}
-                          </div>
-                          {supporter.steps.toLocaleString()} pasos
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Controls */}
-          <div style={{ marginTop: 'var(--space-4)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-2)' }}>
-              <button
-                onClick={togglePlayPause}
-                className="btn btn-secondary"
-                disabled={supporters.length === 0}
-                style={{ minWidth: '120px' }}
-              >
-                {isPlaying ? <Pause size={20} /> : <Play size={20} />}
-                {isPlaying ? 'Pausar' : 'Recorrer'}
-              </button>
-
-              <div style={{ flex: 1 }}>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  value={scrollPosition}
-                  onChange={handleScrollChange}
-                  disabled={supporters.length === 0}
-                  style={{
-                    width: '100%',
-                    height: '8px',
-                    borderRadius: '4px',
-                    outline: 'none',
-                    opacity: supporters.length === 0 ? 0.5 : 1,
-                    cursor: supporters.length === 0 ? 'not-allowed' : 'pointer'
-                  }}
-                />
-              </div>
-
-              <div style={{
-                minWidth: '80px',
-                textAlign: 'right',
-                fontSize: '0.875rem',
-                fontWeight: 600,
-                color: 'var(--text-secondary)'
-              }}>
-                {scrollPosition.toFixed(0)}%
-              </div>
-            </div>
-
-            <div style={{
-              fontSize: '0.75rem',
-              color: 'var(--text-secondary)',
-              textAlign: 'center'
-            }}>
-              {supporters.length > 0
-                ? `Mostrando ${supporters.filter(s => {
-                    const stepsPercent = maxSteps > 0 ? (s.steps / maxSteps) * 100 : 0
-                    return stepsPercent >= scrollPosition && stepsPercent <= scrollPosition + 20
-                  }).length} de ${supporters.length} caminantes`
-                : 'No hay caminantes para mostrar'}
-            </div>
-          </div>
+          <ProtestScene
+            supporters={supporters}
+            maxSteps={maxSteps}
+            cameraPosition={cameraPosition}
+            onCameraChange={handleCameraChange}
+            isPlaying={isPlaying}
+            onTogglePlay={() => setIsPlaying(!isPlaying)}
+          />
         </div>
 
         {/* Placards Wall */}
@@ -556,18 +332,6 @@ function LiveProtestPage() {
                 {submitting ? 'Publicando...' : 'Publicar Pancarta'}
               </button>
             </form>
-
-            <div style={{
-              marginTop: 'var(--space-3)',
-              padding: 'var(--space-2)',
-              background: 'rgba(99,102,241,0.1)',
-              borderRadius: 'var(--radius-md)',
-              fontSize: '0.75rem',
-              color: 'var(--text-secondary)',
-              textAlign: 'center'
-            }}>
-              💡 Pasa el ratón sobre los avatares en la avenida para ver los mensajes
-            </div>
           </div>
 
           {/* Messages Feed */}
