@@ -89,6 +89,11 @@ class Cause {
 
   static async create(data) {
     const cause = new Cause(data);
+    // El creador siempre apoya su propia causa (la ruta ya lo pasaba en
+    // supporters; aquí queda garantizado venga de donde venga el create)
+    if (cause.createdBy && !cause.supporters.includes(cause.createdBy)) {
+      cause.supporters.push(cause.createdBy);
+    }
     await cause.save();
     return cause;
   }

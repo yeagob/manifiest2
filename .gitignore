@@ -47,3 +47,7 @@ coverage/
 .cache/
 temp/
 tmp/
+
+# SQLite
+backend/data/*.db
+backend/data/*.db-*
