@@ -589,3 +589,173 @@ a:hover {
 ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(135deg, var(--primary-dark) 0%, var(--secondary-dark) 100%);
 }
+
+/* ============================================================
+   MANIFIEST2 v2 — "El cartel de protesta" (rediseño gamificado)
+   Capa de tema neobrutalista: crema + tinta + rojo + amarillo.
+   Namespace m2-*; además re-pinta los tokens base para unificar.
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;500;700&display=swap');
+
+:root {
+  --m2-crema: #FFF6E9;
+  --m2-papel: #FFFDF7;
+  --m2-tinta: #16130F;
+  --m2-rojo: #EE4266;
+  --m2-amarillo: #FFD23F;
+  --m2-verde: #3BCEAC;
+  --m2-morado: #540D6E;
+  --m2-linea: #16130F22;
+  --m2-sombra: 4px 4px 0 var(--m2-tinta);
+  --m2-sombra-mini: 2px 2px 0 var(--m2-tinta);
+
+  /* Re-pintado de los tokens del sistema anterior */
+  --primary: var(--m2-rojo);
+  --primary-light: #F26D8B;
+  --primary-dark: #C92B4E;
+  --secondary: var(--m2-verde);
+  --accent: var(--m2-amarillo);
+  --bg-primary: var(--m2-papel);
+  --bg-secondary: var(--m2-crema);
+  --bg-tertiary: #F6EDDD;
+  --text-primary: var(--m2-tinta);
+  --border: var(--m2-linea);
+}
+
+body {
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
+  background:
+    radial-gradient(circle at 15% 20%, #ffd23f14 0%, transparent 40%),
+    radial-gradient(circle at 85% 80%, #ee426611 0%, transparent 40%),
+    var(--m2-crema);
+}
+
+h1, h2, .m2-display { font-family: 'Archivo Black', 'Inter', sans-serif; letter-spacing: -0.02em; }
+
+/* Tarjetas y botones: golpe neobrutalista */
+.card {
+  border: 2px solid var(--m2-tinta);
+  border-radius: 14px;
+  box-shadow: var(--m2-sombra);
+  background: var(--m2-papel);
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.card:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--m2-tinta); }
+.btn { border: 2px solid var(--m2-tinta); border-radius: 12px; box-shadow: var(--m2-sombra-mini); font-weight: 700; }
+.btn:active { transform: translate(2px, 2px); box-shadow: none; }
+.btn-primary { background: var(--m2-rojo); color: #fff; }
+.btn-primary:hover { background: var(--m2-rojo); filter: brightness(1.08); }
+.btn-secondary { background: var(--m2-amarillo); color: var(--m2-tinta); }
+
+/* --- Cabecera / tab bar --- */
+.m2-topbar {
+  background: var(--m2-papel);
+  border-bottom: 3px solid var(--m2-tinta);
+  position: sticky; top: 0; z-index: 100;
+}
+.m2-brand { font-family: 'Archivo Black', sans-serif; font-size: 1.25rem; color: var(--m2-tinta); text-decoration: none; display: flex; align-items: center; gap: .5rem; }
+.m2-brand em { font-style: normal; color: var(--m2-rojo); }
+.m2-chip-nivel {
+  display: inline-flex; align-items: center; gap: .4rem;
+  background: var(--m2-amarillo); border: 2px solid var(--m2-tinta); border-radius: 999px;
+  padding: .25rem .7rem; font-weight: 700; font-size: .8rem; box-shadow: var(--m2-sombra-mini);
+  color: var(--m2-tinta); white-space: nowrap;
+}
+.m2-tabbar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  background: var(--m2-papel); border-top: 3px solid var(--m2-tinta);
+  display: flex; justify-content: space-around; padding: .35rem .25rem calc(.35rem + env(safe-area-inset-bottom));
+}
+.m2-tab {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: .35rem .8rem; border-radius: 12px; text-decoration: none;
+  color: var(--m2-tinta); opacity: .5; font-size: .65rem; font-weight: 700; text-transform: uppercase;
+}
+.m2-tab.activa { opacity: 1; background: var(--m2-amarillo); border: 2px solid var(--m2-tinta); box-shadow: var(--m2-sombra-mini); }
+.m2-tab-cta {
+  margin-top: -22px; background: var(--m2-rojo); color: #fff; border: 3px solid var(--m2-tinta);
+  border-radius: 999px; width: 58px; height: 58px; display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--m2-sombra); opacity: 1;
+}
+@media (min-width: 768px) { .m2-tabbar { display: none; } }
+.m2-nav-desktop { display: none; }
+@media (min-width: 768px) { .m2-nav-desktop { display: flex; gap: .5rem; align-items: center; } }
+.m2-con-tabbar { padding-bottom: 84px; }
+@media (min-width: 768px) { .m2-con-tabbar { padding-bottom: 0; } }
+
+/* --- Héroe del dashboard --- */
+.m2-hero {
+  border: 3px solid var(--m2-tinta); border-radius: 20px; box-shadow: 6px 6px 0 var(--m2-tinta);
+  background: linear-gradient(120deg, var(--m2-amarillo) 0%, #ffe27a 55%, var(--m2-papel) 55.2%);
+  padding: 1.5rem; display: flex; gap: 1.25rem; align-items: center; flex-wrap: wrap;
+}
+.m2-nivel-num { font-family: 'Archivo Black', sans-serif; font-size: .8rem; }
+.m2-titulo-activista { font-family: 'Archivo Black', sans-serif; font-size: clamp(1.4rem, 4vw, 2.2rem); line-height: 1.05; }
+.m2-xp-texto { font-size: .8rem; font-weight: 700; opacity: .7; }
+
+/* --- Chips de stats y racha --- */
+.m2-statgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: .75rem; }
+.m2-stat {
+  border: 2px solid var(--m2-tinta); border-radius: 14px; background: var(--m2-papel);
+  box-shadow: var(--m2-sombra-mini); padding: .8rem 1rem;
+}
+.m2-stat b { font-family: 'Archivo Black', sans-serif; font-size: 1.35rem; display: block; }
+.m2-stat span { font-size: .7rem; text-transform: uppercase; font-weight: 700; opacity: .6; letter-spacing: .06em; }
+.m2-racha-fuego { font-size: 1.6rem; filter: drop-shadow(1px 1px 0 var(--m2-tinta)); animation: m2-arde 1.6s ease-in-out infinite; }
+@keyframes m2-arde { 0%,100% { transform: scale(1) rotate(-3deg); } 50% { transform: scale(1.15) rotate(3deg); } }
+
+/* --- Logros --- */
+.m2-logros { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .75rem; }
+.m2-logro {
+  border: 2px solid var(--m2-tinta); border-radius: 14px; padding: .8rem; text-align: center;
+  background: var(--m2-papel); box-shadow: var(--m2-sombra-mini);
+}
+.m2-logro.bloqueado { opacity: .35; filter: grayscale(1); box-shadow: none; border-style: dashed; }
+.m2-logro .icono { font-size: 1.8rem; display: block; margin-bottom: .25rem; }
+.m2-logro .nombre { font-weight: 700; font-size: .8rem; display: block; }
+.m2-logro .desc { font-size: .68rem; opacity: .65; display: block; margin-top: 2px; }
+
+/* --- Causas como "marchas" --- */
+.m2-marcha-head { display: flex; align-items: center; gap: .8rem; }
+.m2-marcha-icono {
+  width: 52px; height: 52px; border: 2px solid var(--m2-tinta); border-radius: 14px;
+  background: var(--m2-amarillo); display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem; box-shadow: var(--m2-sombra-mini); flex-shrink: 0;
+}
+.m2-barra { height: 14px; border: 2px solid var(--m2-tinta); border-radius: 999px; background: var(--m2-papel); overflow: hidden; }
+.m2-barra > div {
+  height: 100%; border-radius: 999px;
+  background: repeating-linear-gradient(45deg, var(--m2-rojo) 0 10px, #f26d8b 10px 20px);
+  transition: width 1s cubic-bezier(.22,1,.36,1);
+}
+.m2-manifestantes { display: flex; }
+.m2-manifestantes span {
+  width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--m2-tinta);
+  background: var(--m2-verde); display: inline-flex; align-items: center; justify-content: center;
+  font-size: .8rem; margin-left: -8px; animation: m2-marchar 1.2s ease-in-out infinite;
+}
+.m2-manifestantes span:nth-child(2n) { background: var(--m2-amarillo); animation-delay: .2s; }
+.m2-manifestantes span:nth-child(3n) { background: #F26D8B; animation-delay: .4s; }
+@keyframes m2-marchar { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+
+/* --- Toast de logro --- */
+.m2-toast {
+  position: fixed; bottom: 96px; left: 50%; transform: translateX(-50%); z-index: 95;
+  background: var(--m2-tinta); color: var(--m2-crema); border: 2px solid var(--m2-amarillo);
+  border-radius: 14px; padding: .8rem 1.2rem; display: flex; gap: .7rem; align-items: center;
+  box-shadow: 4px 4px 0 rgba(0,0,0,.35); animation: m2-sube .4s cubic-bezier(.22,1,.36,1);
+  max-width: min(92vw, 420px);
+}
+@media (min-width: 768px) { .m2-toast { bottom: 24px; } }
+@keyframes m2-sube { from { transform: translate(-50%, 30px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+.m2-toast .icono { font-size: 1.8rem; }
+.m2-toast b { color: var(--m2-amarillo); display: block; font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; }
+
+/* --- Contador gordo del tracker --- */
+.m2-contador {
+  font-family: 'Archivo Black', sans-serif; font-size: clamp(3.2rem, 16vw, 6.5rem);
+  line-height: 1; text-align: center; font-variant-numeric: tabular-nums;
+  text-shadow: 3px 3px 0 var(--m2-amarillo);
+}
+.m2-pulso { animation: m2-pulsa .5s ease; }
+@keyframes m2-pulsa { 0% { transform: scale(1); } 40% { transform: scale(1.06); } 100% { transform: scale(1); } }
