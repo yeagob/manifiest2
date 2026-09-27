@@ -14,7 +14,8 @@
 │ HealthConn. │                     │   ├─ units       unidades únicas
 └─────────────┘                     │   ├─ placards    pancartas
 ┌─────────────┐  REST + SSE         │   ├─ protests    escena + directo
-│ web/        │◄───────────────────►│   └─ shop        cosméticos + Stripe
+│ web/        │◄───────────────────►│   ├─ game        Eco, taller, frentes, hitos
+                                    │   └─ shop        cosméticos + Stripe
 │ React+Three │                     │        │
 └─────────────┘                     │     SQLite (WAL)
         ▲                           └──────────────────────────────┘
@@ -49,8 +50,9 @@
 | Móvil compañero | `server/src/devices/routes.js` | [03-relojes](03-relojes.md), [14-app-movil](14-app-movil.md) |
 | Libro mayor | `server/src/steps/ledger.js` | [04-libro-mayor](04-libro-mayor.md) |
 | Unidades | `server/src/units/routes.js` | [05-progresion-y-unidades](05-progresion-y-unidades.md) |
+| Juego de gestión (Eco, taller, frentes, hitos) | `server/src/game/` | [17-juego-de-gestion](17-juego-de-gestion.md) |
 | Causas y pancartas | `server/src/causes/`, `server/src/placards/` | [08-causas-y-pancartas](08-causas-y-pancartas.md) |
-| Escena y directo | `server/src/protests/routes.js` | [07-visualizacion](07-visualizacion.md) |
+| Escena y directo | `server/src/protests/routes.js` | [19-experiencia-de-mani](19-experiencia-de-mani.md) |
 | Tienda | `server/src/shop/routes.js` | [09-monetizacion](09-monetizacion.md) |
 | Seguridad transversal | `server/src/security/`, `server/src/middleware/` | [10-seguridad](10-seguridad.md) |
 | Usuarios y RGPD | `server/src/users/` | [11-privacidad](11-privacidad.md) |

@@ -5,7 +5,7 @@ const LINKS = [
   ['/', 'Inicio', true],
   ['/mundo', 'Mundo'],
   ['/causas', 'Causas'],
-  ['/movimiento', 'Mi movimiento', false, true],
+  ['/cuartel', 'Cuartel', false, true],
   ['/dispositivos', 'Relojes', false, true],
   ['/tienda', 'Tienda', false, true],
   ['/perfil', 'Perfil', false, true]

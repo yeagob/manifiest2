@@ -18,13 +18,35 @@ export const COSMETICS = [
   { id: 'theme_plaza', kind: 'avenueTheme', name: 'Plaza Mayor', unlockLevel: 1, priceCents: null },
   { id: 'theme_litoral', kind: 'avenueTheme', name: 'Paseo Litoral', unlockLevel: null, priceCents: 999 },
   { id: 'theme_neon', kind: 'avenueTheme', name: 'Avenida Neón', unlockLevel: null, priceCents: 999 },
-  { id: 'theme_bosque', kind: 'avenueTheme', name: 'Sendero del Bosque', unlockLevel: 18, priceCents: null }
+  { id: 'theme_bosque', kind: 'avenueTheme', name: 'Sendero del Bosque', unlockLevel: 18, priceCents: null },
+  { id: 'effect_serpentinas', kind: 'effect', name: 'Serpentinas', unlockLevel: 13, priceCents: null },
+  { id: 'frame_kraft', kind: 'frame', name: 'Marco kraft cosido', unlockLevel: 17, priceCents: null },
+  { id: 'placard_collage', kind: 'placardStyle', name: 'Collage de recortes', unlockLevel: 19, priceCents: null },
+  { id: 'palette_atardecer', kind: 'palette', name: 'Paleta Atardecer', unlockLevel: 21, priceCents: null },
+  { id: 'effect_estrellas', kind: 'effect', name: 'Estrellas de papel', unlockLevel: 23, priceCents: null },
+  { id: 'placard_linograbado', kind: 'placardStyle', name: 'Linograbado', unlockLevel: 24, priceCents: null },
+  { id: 'palette_oro', kind: 'palette', name: 'Pan de oro', unlockLevel: 26, priceCents: null },
+  { id: 'frame_serigrafia', kind: 'frame', name: 'Marco de serigrafía', unlockLevel: 27, priceCents: null },
+  { id: 'effect_tinta', kind: 'effect', name: 'Salpicadura de tinta', unlockLevel: 28, priceCents: null },
+  { id: 'theme_verbena', kind: 'avenueTheme', name: 'Verbena de barrio', unlockLevel: 29, priceCents: null }
 ]
+
+export const EFFECT_COLORS = {
+  effect_confetti: ['#FF48B0', '#FFE800', '#0078BF', '#00A95C'],
+  effect_petals: ['#FF9FD2', '#FFD1E8', '#FFFFFF'],
+  effect_lanterns: ['#FFB511', '#FF6C2F'],
+  effect_aurora: ['#82D8D5', '#765BA7', '#00A95C'],
+  effect_serpentinas: ['#FF48B0', '#FFE800', '#82D8D5'],
+  effect_estrellas: ['#FFE800', '#FFB511'],
+  effect_tinta: ['#1D1B2F', '#3D5588']
+}
 
 export const PALETTE_OVERRIDES = {
   palette_bosque: ['#00A95C', '#3B2A20'],
   palette_marea: ['#0078BF', '#82D8D5'],
-  palette_noche: ['#1D1B2F', '#FF48B0']
+  palette_noche: ['#1D1B2F', '#FF48B0'],
+  palette_atardecer: ['#FF6C2F', '#765BA7'],
+  palette_oro: ['#FFB511', '#1D1B2F']
 }
 
 export function findCosmetic(id) {

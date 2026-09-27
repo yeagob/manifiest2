@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/Layout.jsx'
 import RequireAuth from './components/RequireAuth.jsx'
 import { useSession } from './lib/store.js'
@@ -7,7 +7,7 @@ import HomePage from './pages/HomePage.jsx'
 import { LoginPage, RegisterPage, VerifyPage, RecoverPage } from './pages/AuthPages.jsx'
 import CausesPage from './pages/CausesPage.jsx'
 import CreateCausePage from './pages/CreateCausePage.jsx'
-import MovementPage from './pages/MovementPage.jsx'
+import CuartelPage from './pages/CuartelPage.jsx'
 import DevicesPage from './pages/DevicesPage.jsx'
 import ShopPage from './pages/ShopPage.jsx'
 import ProfilePage from './pages/ProfilePage.jsx'
@@ -33,7 +33,8 @@ export default function App() {
           <Route path="causas" element={<CausesPage />} />
           <Route path="causas/nueva" element={guard(<CreateCausePage />)} />
           <Route path="marcha/:causeId" element={<MarchPage />} />
-          <Route path="movimiento" element={guard(<MovementPage />)} />
+          <Route path="cuartel" element={guard(<CuartelPage />)} />
+          <Route path="movimiento" element={<Navigate to="/cuartel" replace />} />
           <Route path="dispositivos" element={guard(<DevicesPage />)} />
           <Route path="tienda" element={guard(<ShopPage />)} />
           <Route path="perfil" element={guard(<ProfilePage />)} />

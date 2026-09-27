@@ -11,6 +11,9 @@ import { createRateLimits } from './security/rateLimits.js'
 import { createMailer } from './lib/mailer.js'
 import { createLedger } from './steps/ledger.js'
 import { createProviders } from './providers/index.js'
+import { createGame } from './game/service.js'
+import { createDeployer } from './game/deploy.js'
+import { gameRoutes } from './game/routes.js'
 import { authRoutes } from './auth/routes.js'
 import { userRoutes } from './users/routes.js'
 import { stepRoutes } from './steps/routes.js'
@@ -36,6 +39,8 @@ export function createContext(config, overrides = {}) {
     fetch: overrides.fetch ?? globalThis.fetch,
     stripe: overrides.stripe
   }
+  ctx.game = createGame(ctx)
+  ctx.deployer = createDeployer(ctx)
   ctx.ledger = createLedger(ctx)
   ctx.providers = createProviders(ctx)
   return ctx
@@ -88,6 +93,7 @@ export function createApp(ctx) {
   app.use('/api/connections', connectionRoutes(ctx))
   app.use('/api/causes', causeRoutes(ctx))
   app.use('/api/units', unitRoutes(ctx))
+  app.use('/api/game', gameRoutes(ctx))
   app.use('/api/placards', placardRoutes(ctx))
   app.use('/api/protests', protestRoutes(ctx))
   app.use('/api/shop', shopRoutes(ctx))

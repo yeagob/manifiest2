@@ -1,5 +1,7 @@
 # 06 · Propuesta estética y unidades únicas
 
+> La dirección de arte vigente es **«Papel y Cartón» con acentos de Serigrafía**: ver [16 · Dirección de arte](16-direccion-de-arte.md). Este documento describe el genoma de las unidades, que no cambia. La paleta Riso sigue siendo el sistema de tintas; lo que cambia es el material (recortables de papel) y el uso de la tinta como acento.
+
 Código: `shared/src/genome.js`, `web/src/components/UnitSVG.jsx`, `web/src/components/UnitCard.jsx`, `web/src/styles/tokens.css`.
 
 ## Dirección de arte: *Riso Street*
@@ -60,6 +62,10 @@ El genoma es la identidad; el **loadout** es la ropa que se puede cambiar:
 - `placardStyle`: cartón, risografía, serigrafía, neón o bordado.
 - `effect`: confeti, pétalos, farolillos o aurora.
 - `frame`: marco de colección para la carta (sello postal u holográfico).
+
+## Recortable y veteranía
+
+`UnitSVG` dibuja cada unidad como **recortable de papel** (borde troquelado blanco, sombra de grosor, grano opcional) y añade la insignia de su **rango de veteranía** en el pecho. El mismo SVG, sin grano para rasterizar más rápido, es la textura de la figura en la mani 3D: carta y figura son idénticas.
 
 ## Cartas de colección
 

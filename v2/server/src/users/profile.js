@@ -1,10 +1,10 @@
-import { levelProgress, unitCapacity, usedCapacity, validatePattern } from '@manifiest/shared'
+import { levelProgress, unitCapacity, usedCapacity, validatePattern, extraCapacity } from '@manifiest/shared'
 
 export function getProfile(db, userId) {
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId)
   if (!user) return null
   const units = db.prepare('SELECT role FROM units WHERE user_id = ?').all(userId)
-  const capacity = unitCapacity(user.level, user.active_days)
+  const capacity = unitCapacity(user.level, user.active_days, extraCapacity(JSON.parse(user.upgrades_json || '{}')))
   return {
     id: user.id,
     email: user.email,
@@ -17,6 +17,7 @@ export function getProfile(db, userId) {
     activeDays: user.active_days,
     totalSteps: user.total_steps,
     unallocatedSteps: user.unallocated_steps,
+    eco: user.eco_balance,
     pattern: JSON.parse(user.pattern_json),
     capacity,
     usedCapacity: usedCapacity(units),

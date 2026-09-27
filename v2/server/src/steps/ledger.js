@@ -1,4 +1,4 @@
-import { allocateSteps, xpForDay, levelFromXp, ACTIVE_DAY_MIN_STEPS, DAILY_STEP_CAP } from '@manifiest/shared'
+import { allocateSteps, xpForDay, levelFromXp, stepsEco, ACTIVE_DAY_MIN_STEPS, DAILY_STEP_CAP } from '@manifiest/shared'
 import { badRequest } from '../lib/errors.js'
 import { nowIso, isoDate, addDays } from '../lib/time.js'
 
@@ -9,7 +9,9 @@ export function createLedger(ctx) {
   const { db, events } = ctx
 
   const q = {
-    user: db.prepare('SELECT id, xp, active_days, pattern_json, pattern_cursor FROM users WHERE id = ?'),
+    user: db.prepare('SELECT id, xp, active_days, pattern_json, pattern_cursor, upgrades_json FROM users WHERE id = ?'),
+    allocOf: db.prepare('SELECT steps FROM allocations WHERE user_id = ? AND cause_id = ?'),
+    causeStats: db.prepare('SELECT total_steps, (SELECT COUNT(*) FROM allocations a WHERE a.cause_id = causes.id AND a.steps > 0) AS people FROM causes WHERE id = ?'),
     sourceDay: db.prepare('SELECT steps FROM source_daily WHERE user_id = ? AND source = ? AND date = ?'),
     upsertSource: db.prepare(`INSERT INTO source_daily (user_id, source, date, steps, updated_at) VALUES (?, ?, ?, ?, ?)
       ON CONFLICT (user_id, source, date) DO UPDATE SET steps = excluded.steps, updated_at = excluded.updated_at`),
@@ -24,7 +26,7 @@ export function createLedger(ctx) {
     causeTotal: db.prepare('UPDATE causes SET total_steps = total_steps + ? WHERE id = ?'),
     activeCauses: db.prepare(`SELECT id FROM causes WHERE status = 'active'`),
     updateUser: db.prepare(`UPDATE users SET xp = ?, level = ?, active_days = ?, total_steps = total_steps + ?,
-      unallocated_steps = unallocated_steps + ?, pattern_cursor = ? WHERE id = ?`),
+      unallocated_steps = unallocated_steps + ?, pattern_cursor = ?, eco_balance = eco_balance + ? WHERE id = ?`),
     flag: db.prepare('INSERT INTO integrity_flags (user_id, source, date, reason, value) VALUES (?, ?, ?, ?, ?)')
   }
 
@@ -43,14 +45,19 @@ export function createLedger(ctx) {
   function distribute(userId, pattern, cursor, delta) {
     const active = new Set(q.activeCauses.all().map(r => r.id))
     const livePattern = pattern.filter(id => active.has(id))
-    if (!livePattern.length) return { allocation: {}, cursor: 0, unallocated: delta }
+    if (!livePattern.length) return { allocation: {}, cursor: 0, unallocated: delta, milestones: [] }
     const safeCursor = livePattern.length === pattern.length ? cursor : 0
     const result = allocateSteps(livePattern, safeCursor, delta)
+    const milestones = []
     for (const [causeId, steps] of Object.entries(result.allocation)) {
+      const newcomer = !(q.allocOf.get(userId, causeId)?.steps > 0)
       q.alloc.run(userId, causeId, steps)
       q.causeTotal.run(steps, causeId)
+      const after = q.causeStats.get(causeId)
+      milestones.push(...ctx.game.checkMilestones(causeId, 'steps', after.total_steps - steps, after.total_steps))
+      if (newcomer) milestones.push(...ctx.game.checkMilestones(causeId, 'people', after.people - 1, after.people))
     }
-    return { ...result, unallocated: 0 }
+    return { ...result, unallocated: 0, milestones }
   }
 
   const recordDailyTotal = db.transaction((userId, source, date, reportedSteps) => {
@@ -84,22 +91,22 @@ export function createLedger(ctx) {
     const xp = user.xp + (dayXp - prevCredit.xp)
     const level = levelFromXp(xp)
     const activeDays = user.active_days + (becameActive ? 1 : 0)
-    const { allocation, cursor, unallocated } = distribute(userId, JSON.parse(user.pattern_json), user.pattern_cursor, delta)
+    const { allocation, cursor, unallocated, milestones } = distribute(userId, JSON.parse(user.pattern_json), user.pattern_cursor, delta)
 
     q.ledger.run(userId, date, source, delta, JSON.stringify(allocation))
-    q.updateUser.run(xp, level, activeDays, delta, unallocated, cursor, userId)
+    q.updateUser.run(xp, level, activeDays, delta, unallocated, cursor, stepsEco(delta, JSON.parse(user.upgrades_json || '{}')), userId)
 
-    return { delta, allocation, unallocated, xp, level }
+    return { delta, allocation, unallocated, xp, level, milestones }
   })
 
   const allocateReserve = db.transaction((userId) => {
     const user = db.prepare('SELECT unallocated_steps, pattern_json, pattern_cursor FROM users WHERE id = ?').get(userId)
     if (!user.unallocated_steps) return { allocation: {}, allocated: 0 }
-    const { allocation, cursor, unallocated } = distribute(userId, JSON.parse(user.pattern_json), user.pattern_cursor, user.unallocated_steps)
+    const { allocation, cursor, unallocated, milestones } = distribute(userId, JSON.parse(user.pattern_json), user.pattern_cursor, user.unallocated_steps)
     if (unallocated) throw badRequest('Configura primero tu patrón de reparto', 'empty_pattern')
     db.prepare('UPDATE users SET unallocated_steps = 0, pattern_cursor = ? WHERE id = ?').run(cursor, userId)
     q.ledger.run(userId, isoDate(), 'reserve', 0, JSON.stringify(allocation))
-    return { allocation, allocated: user.unallocated_steps }
+    return { allocation, allocated: user.unallocated_steps, milestones }
   })
 
   return {
@@ -107,6 +114,7 @@ export function createLedger(ctx) {
       const result = recordDailyTotal(userId, source, date, steps)
       if (result.delta > 0) {
         for (const [causeId, amount] of Object.entries(result.allocation)) events.emit('steps', { causeId, userId, steps: amount })
+        ctx.game.announce(result.milestones)
       }
       return result
     },
@@ -116,6 +124,7 @@ export function createLedger(ctx) {
     allocateReserve(userId) {
       const result = allocateReserve(userId)
       for (const [causeId, amount] of Object.entries(result.allocation)) events.emit('steps', { causeId, userId, steps: amount })
+      ctx.game.announce(result.milestones ?? [])
       return result
     }
   }

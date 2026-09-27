@@ -1,16 +1,21 @@
+import crypto from 'node:crypto'
 import express from 'express'
-import { UNIT_ROLES, figuresFor, generateGenome } from '@manifiest/shared'
+import { UNIT_ROLES, figuresFor, rankFor } from '@manifiest/shared'
 import { notFound } from '../lib/errors.js'
 import { CAUSE_SELECT, serializeCause } from '../causes/routes.js'
-import { serializeUnit } from '../units/routes.js'
+import { serviceSecondsOf } from '../game/service.js'
+import { verifyAccessToken } from '../security/tokens.js'
 
 const MAX_UNITS = 3000
-const MAX_PEOPLE = 1500
+const MAX_PEOPLE = 2000
+const CITIZENS_PER_BLOCK = 24
 const MAX_STREAMS_PER_CAUSE = 2000
+
+const blockKey = (salt, userId) => crypto.createHmac('sha256', salt).update(userId).digest('hex').slice(0, 16)
 
 export function protestRoutes(ctx) {
   const router = express.Router()
-  const { db, events } = ctx
+  const { db, events, config } = ctx
   const streams = new Map()
 
   router.get('/world', (_req, res) => {
@@ -26,31 +31,73 @@ export function protestRoutes(ctx) {
   router.get('/:causeId/scene', (req, res) => {
     const row = db.prepare(`${CAUSE_SELECT} WHERE c.id = ?`).get(req.params.causeId)
     if (!row) throw notFound('Causa no encontrada')
-    const unitRows = db.prepare(`SELECT un.*, us.display_name, us.level FROM units un JOIN users us ON us.id = un.user_id
-      WHERE un.cause_id = ? ORDER BY CASE un.rarity WHEN 'legendary' THEN 0 WHEN 'epic' THEN 1 WHEN 'rare' THEN 2 ELSE 3 END, un.created_at LIMIT ?`).all(row.id, MAX_UNITS)
-    const people = db.prepare(`SELECT a.user_id AS userId, u.display_name AS displayName, u.level, a.steps FROM allocations a
-      JOIN users u ON u.id = a.user_id WHERE a.cause_id = ? AND a.steps > 0 ORDER BY a.steps DESC LIMIT ?`).all(row.id, MAX_PEOPLE)
-    const placards = db.prepare(`SELECT p.id, p.text, p.style, p.votes, u.display_name AS author FROM placards p JOIN users u ON u.id = p.user_id
+    const unitRows = db.prepare(`SELECT un.*, us.display_name, us.level, us.upgrades_json FROM units un JOIN users us ON us.id = un.user_id
+      WHERE un.cause_id = ? ORDER BY un.deployed_at, un.serial LIMIT ?`).all(row.id, MAX_UNITS)
+    const people = db.prepare(`SELECT a.user_id, a.steps FROM allocations a WHERE a.cause_id = ? AND a.steps > 0 ORDER BY a.steps DESC LIMIT ?`).all(row.id, MAX_PEOPLE)
+    const placardByUser = new Map(db.prepare(`SELECT user_id, text, style FROM placards WHERE cause_id = ? AND status = 'visible' ORDER BY votes DESC, created_at DESC`)
+      .all(row.id).reverse().map(p => [p.user_id, { text: p.text, style: p.style }]))
+    const topPlacards = db.prepare(`SELECT p.id, p.text, p.style, p.votes, u.display_name AS author FROM placards p JOIN users u ON u.id = p.user_id
       WHERE p.cause_id = ? AND p.status = 'visible' ORDER BY p.votes DESC LIMIT 24`).all(row.id)
-    const units = unitRows.map(u => ({ ...serializeUnit(u), owner: { displayName: u.display_name, level: u.level } }))
-    const unitOwners = new Set(unitRows.map(u => u.user_id))
+    const stepsByUser = new Map(people.map(p => [p.user_id, p.steps]))
+    let viewer = null
+    const [scheme, token] = (req.get('authorization') || '').split(' ')
+    if (scheme === 'Bearer' && token) {
+      try { viewer = verifyAccessToken(config.jwtSecret, token).sub } catch {}
+    }
+
+    const byOwner = new Map()
+    for (const u of unitRows) {
+      if (!byOwner.has(u.user_id)) {
+        byOwner.set(u.user_id, {
+          key: blockKey(config.jwtSecret, u.user_id),
+          type: 'unit',
+          owner: { displayName: u.display_name, level: u.level },
+          steps: stepsByUser.get(u.user_id) ?? 0,
+          placard: placardByUser.get(u.user_id) ?? null,
+          since: u.deployed_at,
+          mine: viewer === u.user_id,
+          units: [],
+          upgrades: JSON.parse(u.upgrades_json || '{}')
+        })
+      }
+      const block = byOwner.get(u.user_id)
+      block.units.push({
+        id: u.id, s: u.seed, r: u.role, q: u.rarity, n: u.name,
+        k: rankFor(serviceSecondsOf(u), block.upgrades).id,
+        l: JSON.parse(u.loadout_json)
+      })
+    }
+    const unitBlocks = [...byOwner.values()].map(({ upgrades, ...b }) => ({
+      ...b, power: b.units.reduce((s, x) => s + (UNIT_ROLES[x.r]?.cost ?? 1), 0)
+    }))
+    const citizens = people.filter(p => !byOwner.has(p.user_id)).map(p => ({ s: `person:${blockKey(config.jwtSecret, p.user_id)}`, steps: p.steps }))
+    const citizenBlocks = []
+    for (let i = 0; i < citizens.length; i += CITIZENS_PER_BLOCK) {
+      const group = citizens.slice(i, i + CITIZENS_PER_BLOCK)
+      citizenBlocks.push({ key: `c${i / CITIZENS_PER_BLOCK}`, type: 'citizens', owner: null, citizens: group, steps: group.reduce((s, c) => s + c.steps, 0) })
+    }
+    unitBlocks.sort((a, b) => b.power - a.power)
+    const blocks = []
+    let ci = 0
+    unitBlocks.forEach((b, i) => {
+      blocks.push(b)
+      if ((i + 1) % 3 === 0 && ci < citizenBlocks.length) blocks.push(citizenBlocks[ci++])
+    })
+    while (ci < citizenBlocks.length) blocks.push(citizenBlocks[ci++])
+
+    res.set('Cache-Control', 'no-store')
     res.json({
       cause: serializeCause(row),
       stats: {
         uniquePeople: row.unique_people,
         totalSteps: row.total_steps,
         deployedUnits: row.deployed_units,
-        figures: figuresFor(unitRows) + people.filter(p => !unitOwners.has(p.userId)).length
+        figures: figuresFor(unitRows.map(u => ({ role: u.role }))) + citizens.length,
+        blocks: blocks.length
       },
-      units,
-      people: people.map(p => ({
-        displayName: p.displayName,
-        level: p.level,
-        steps: p.steps,
-        hasUnits: unitOwners.has(p.userId),
-        genome: generateGenome(`person:${p.userId}`, { rarity: 'common', role: 'marcher' })
-      })),
-      placards
+      blocks,
+      placards: topPlacards,
+      milestones: db.prepare('SELECT kind, threshold, reached_at AS reachedAt FROM milestones WHERE cause_id = ? ORDER BY reached_at DESC LIMIT 10').all(row.id)
     })
   })
 
@@ -63,14 +110,19 @@ export function protestRoutes(ctx) {
     res.flushHeaders()
     set.add(res)
     streams.set(causeId, set)
-    const onSteps = event => {
-      if (event.causeId === causeId) res.write(`event: steps\ndata: ${JSON.stringify({ steps: event.steps, at: Date.now() })}\n\n`)
-    }
+    const send = (event, data) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
+    const onSteps = e => { if (e.causeId === causeId) send('steps', { steps: e.steps, at: Date.now() }) }
+    const onMilestone = e => { if (e.causeId === causeId) send('milestone', { kind: e.kind, threshold: e.threshold, at: Date.now() }) }
+    const onDeploy = e => { if (e.causeId === causeId) send('deploy', { delta: e.delta, at: Date.now() }) }
     const heartbeat = setInterval(() => res.write(': ping\n\n'), 25_000)
     events.on('steps', onSteps)
+    events.on('milestone', onMilestone)
+    events.on('deploy', onDeploy)
     req.on('close', () => {
       clearInterval(heartbeat)
       events.off('steps', onSteps)
+      events.off('milestone', onMilestone)
+      events.off('deploy', onDeploy)
       set.delete(res)
     })
   })

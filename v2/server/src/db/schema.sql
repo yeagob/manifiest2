@@ -14,6 +14,9 @@ CREATE TABLE IF NOT EXISTS users (
   pattern_json TEXT NOT NULL DEFAULT '[]',
   pattern_cursor INTEGER NOT NULL DEFAULT 0,
   unit_serial INTEGER NOT NULL DEFAULT 0,
+  eco_balance REAL NOT NULL DEFAULT 0,
+  eco_collected_at TEXT,
+  upgrades_json TEXT NOT NULL DEFAULT '{}',
   failed_logins INTEGER NOT NULL DEFAULT 0,
   locked_until TEXT,
   disabled_at TEXT,
@@ -170,6 +173,8 @@ CREATE TABLE IF NOT EXISTS units (
   name TEXT NOT NULL,
   cause_id TEXT REFERENCES causes(id) ON DELETE SET NULL,
   loadout_json TEXT NOT NULL DEFAULT '{}',
+  deployed_at TEXT,
+  service_seconds INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
   UNIQUE (user_id, serial)
 );
@@ -225,4 +230,12 @@ CREATE TABLE IF NOT EXISTS audit_log (
   meta_json TEXT,
   ip TEXT,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
+
+CREATE TABLE IF NOT EXISTS milestones (
+  cause_id TEXT NOT NULL REFERENCES causes(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL CHECK (kind IN ('people', 'steps')),
+  threshold INTEGER NOT NULL,
+  reached_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  PRIMARY KEY (cause_id, kind, threshold)
 );

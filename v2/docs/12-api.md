@@ -63,13 +63,26 @@ Categorías: `medio-ambiente`, `animales`, `paz`, `derechos-humanos`, `vivienda`
 
 `GET /units` → `{roles, units[]}` (cada unidad incluye su `genome` derivado) · `POST /units/mint {role}` · `DELETE /units/:id` · `POST /units/deploy {unitIds[], causeId|null}` · `PUT /units/:id/loadout {placardStyle?, palette?, effect?, frame?}`
 
+## Juego (`/game`) 🔒
+
+| Método | Ruta | Cuerpo | Respuesta |
+|---|---|---|---|
+| GET | `/game/state` | — | `{eco:{balance,pending,ratePerHour,storageHours}, progress, capacity, usedCapacity, upgrades[], roles[], fronts[], reserve, categorySteps, track[], categoryUnits[]}` |
+| POST | `/game/collect` | — | `{balance, collected, state}` |
+| POST | `/game/upgrades/:id` | — | `state` |
+| POST | `/game/fronts/:causeId/send` | `{role, count}` | `state` |
+| POST | `/game/fronts/:causeId/recall` | `{role, count}` | `state` |
+| POST | `/game/auto-deploy` | — (nivel 10) | `state` |
+
+Cada unidad de `/units` incluye `rank {id, label, mult, hours, nextAtHours}`. `POST /units/mint` cobra Eco (`mintCost`) y comprueba los requisitos de categoría.
+
 ## Pancartas (`/placards`)
 
 `GET /placards/cause/:causeId` · `POST /placards` 🔒 `{causeId, text, style?}` · `POST /placards/:id/vote` 🔒 · `POST /placards/:id/report` 🔒 · `DELETE /placards/:id` 🔒
 
 ## Protestas (`/protests`)
 
-`GET /protests/world` · `GET /protests/:causeId/scene` → `{cause, stats, units, people, placards}` · `GET /protests/:causeId/live` (SSE, evento `steps` `{steps, at}`)
+`GET /protests/world` · `GET /protests/:causeId/scene` → `{cause, stats:{uniquePeople,totalSteps,deployedUnits,figures,blocks}, blocks[], placards[], milestones[]}` (Bearer opcional para marcar `mine`). Cada bloque es `{key, type:'unit'|'citizens', owner:{displayName,level}|null, placard, steps, units:[{id,s,r,q,n,k,l}] | citizens:[{s,steps}], power}` · `GET /protests/:causeId/live` (SSE: `steps {steps, at}`, `milestone {kind, threshold, at}`, `deploy {delta, at}`)
 
 ## Tienda (`/shop`) 🔒
 

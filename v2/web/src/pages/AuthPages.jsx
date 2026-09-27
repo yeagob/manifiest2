@@ -41,7 +41,7 @@ export function LoginPage() {
       throw err
     }
     await reload()
-    navigate(location.state?.from ?? '/movimiento')
+    navigate(location.state?.from ?? '/cuartel')
   })
   return (
     <AuthCard title="Vuelve a la calle" footer={<>¿Primera vez? <Link to="/registro">Únete</Link> · <Link to="/recuperar">He olvidado mi contraseña</Link></>}>

@@ -14,7 +14,8 @@ npm run seed -w @manifiest/server
 - `server/.env` se carga automáticamente (`--env-file-if-exists`).
 - API en `http://localhost:4000` y web en `http://localhost:5173`, con Vite reenviando `/api` a la API.
 - Sin `SMTP_URL`, los códigos de verificación se imprimen en la consola del servidor (`[mail:dev]`).
-- El *seed* crea 60 usuarios `demo{0..59}@manifiest.local` con la contraseña `manifiesto-demo-2026`, 4 causas, pasos de 30 días, unidades y pancartas.
+- El *seed* crea 60 usuarios `demo{0..59}@manifiest.local` con la contraseña `manifiesto-demo-2026`, 4 causas, pasos de 30 días, unidades de los 19 roles (con veteranía, efectos y paletas) y pancartas. `demo0`–`demo9` son veteranos de nivel 12 a 30 con dragones, mosaicos, ballenas y carrozas.
+- Las bases de datos existentes se migran solas al arrancar (columnas nuevas de economía y servicio).
 
 ## Tests
 

@@ -29,9 +29,9 @@ Caminar (reloj) ──► libro mayor ──► patrón de reparto ──► pas
 
 1. **Caminas** con tu reloj, sin abrir la app.
 2. Los pasos se **reparten** según tu patrón, por ejemplo "de cada 5 pasos: 1 animales, 1 clima, 3 contra la guerra".
-3. Los días activos y los pasos te dan **XP**. El nivel y la antigüedad amplían tu **capacidad**.
-4. Con esa capacidad **acuñas unidades únicas**, procedurales e irrepetibles, y las **despliegas** en las causas que quieras. Puedes ponerlas todas en una sola.
-5. La **escena 3D** muestra la marcha desde el dron, a pie de calle o en la cabecera. Siempre hay un contador fiel visible y un modo *Vista fiel* (1 persona = 1 figura).
+3. Los días activos y los pasos te dan **XP**. El nivel y la antigüedad amplían tu **capacidad**. Tus pasos y tus unidades en la calle generan **Eco**.
+4. Con Eco y capacidad **acuñas unidades únicas**, procedurales e irrepetibles, y las **despliegas** estratégicamente en las causas que quieras (las manis que más lo necesitan rinden más). Puedes ponerlas todas en una sola. Con el Eco mejoras tu **taller** en un bucle incremental ([17](17-juego-de-gestion.md)).
+5. La **mani infinita** se recorre en un traveling de cámara que pasa por todas las unidades, con su sonido y sus pancartas, y genera carteles para redes en el modo foto ([19](19-experiencia-de-mani.md)). Siempre hay un contador fiel visible y un modo *Vista fiel* (1 persona = 1 figura).
 
 ## Documentos relacionados
 

@@ -26,8 +26,11 @@ test('acuñar unidades únicas, desplegarlas y ver la escena con números fieles
   assert.equal(scene.stats.uniquePeople, 1)
   assert.equal(scene.stats.totalSteps, 3000)
   assert.equal(scene.stats.deployedUnits, 3)
-  assert.equal(scene.units.length, 3)
-  assert.equal(scene.units[0].owner.email, undefined)
+  assert.equal(scene.blocks.length, 1)
+  assert.equal(scene.blocks[0].units.length, 3)
+  assert.equal(scene.blocks[0].owner.email, undefined)
+  assert.equal(scene.blocks[0].owner.displayName, 'Tester')
+  assert.ok(!JSON.stringify(scene).includes(u.id))
 })
 
 test('no se pueden desplegar unidades ajenas ni equipar cosméticos no poseídos', async () => {

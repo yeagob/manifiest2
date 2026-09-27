@@ -1,5 +1,5 @@
 import crypto from 'node:crypto'
-import { UNIT_ROLES, canMint, unitCapacity, generateGenome, rollRarity, GENOME_VERSION, createRng } from '@manifiest/shared'
+import { UNIT_ROLES, canMint, unitCapacity, generateGenome, rollRarity, GENOME_VERSION, createRng, xpForLevel, COSMETICS } from '@manifiest/shared'
 import { loadConfig } from '../src/config.js'
 import { createContext } from '../src/app.js'
 import { hashPassword } from '../src/security/passwords.js'
@@ -49,19 +49,35 @@ users.forEach((userId, i) => {
   for (let d = days - 1; d >= 0; d--) {
     ctx.ledger.recordDailyTotal(userId, rng() > 0.5 ? 'fitbit' : 'device:ios', addDays(isoDate(), -d), Math.floor((3000 + rng() * 11000) * intensity))
   }
+  const VETERAN_LEVELS = [30, 30, 27, 25, 22, 20, 18, 16, 14, 12]
+  if (i < VETERAN_LEVELS.length) {
+    const lvl = VETERAN_LEVELS[i]
+    db.prepare('UPDATE users SET level = ?, xp = ?, active_days = active_days + 60, eco_balance = ?, upgrades_json = ? WHERE id = ?')
+      .run(lvl, xpForLevel(lvl) + 10, 2000 + lvl * 300, JSON.stringify({ imprenta: 4, caja: 3, zapatillas: 5, furgoneta: 2, escuela: 2 }), userId)
+  }
   const user = db.prepare('SELECT level, active_days FROM users WHERE id = ?').get(userId)
   const capacity = unitCapacity(user.level, user.active_days)
-  const roles = Object.keys(UNIT_ROLES).reverse()
+  const veteranCats = { paz: 1e6, 'medio-ambiente': 1e6, animales: 1e6, vivienda: 1e6, igualdad: 1e6 }
+  const roles = Object.keys(UNIT_ROLES).sort((a, b) => UNIT_ROLES[b].cost - UNIT_ROLES[a].cost)
+  const effects = COSMETICS.filter(c => c.kind === 'effect').map(c => c.id)
+  const palettes = COSMETICS.filter(c => c.kind === 'palette').map(c => c.id)
   const owned = []
   let serial = 0
-  for (let guard = 0; guard < 60; guard++) {
-    const role = roles.find(r => !canMint(r, owned, user.level, capacity) && rng() > 0.35) ?? (canMint('marcher', owned, user.level, capacity) ? null : 'marcher')
+  for (let guard = 0; guard < 80; guard++) {
+    const ctxCats = i < VETERAN_LEVELS.length ? veteranCats : {}
+    const special = roles.find(r => r !== 'marcher' && !canMint(r, owned, user.level, capacity, { categorySteps: ctxCats }) && rng() > 0.55 && !owned.some(o => o.role === r && UNIT_ROLES[r].cost >= 6))
+    const role = special ?? (canMint('marcher', owned, user.level, capacity) ? null : 'marcher')
     if (!role) break
     serial++
     const seed = crypto.randomBytes(16).toString('hex')
     const rarity = rollRarity(seed, user.level, role)
-    db.prepare('INSERT INTO units (id, user_id, serial, seed, genome_version, role, rarity, name, cause_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
-      .run(crypto.randomUUID(), userId, serial, seed, GENOME_VERSION, role, rarity, generateGenome(seed, { rarity, role }).name, pattern[Math.floor(rng() * pattern.length)])
+    const loadout = {}
+    if (user.level >= 6 && rng() < 0.25) loadout.effect = effects[Math.floor(rng() * effects.length)]
+    if (user.level >= 8 && rng() < 0.2) loadout.palette = palettes[Math.floor(rng() * palettes.length)]
+    const hoursAgo = Math.floor(rng() * (i < VETERAN_LEVELS.length ? 900 : 200))
+    const deployedAt = new Date(Date.now() - hoursAgo * 3600e3).toISOString()
+    db.prepare('INSERT INTO units (id, user_id, serial, seed, genome_version, role, rarity, name, cause_id, loadout_json, deployed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .run(crypto.randomUUID(), userId, serial, seed, GENOME_VERSION, role, rarity, generateGenome(seed, { rarity, role }).name, pattern[Math.floor(rng() * pattern.length)], JSON.stringify(loadout), deployedAt)
     owned.push({ role })
   }
   db.prepare('UPDATE users SET unit_serial = ? WHERE id = ?').run(serial, userId)

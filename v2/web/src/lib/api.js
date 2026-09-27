@@ -94,8 +94,14 @@ export const api = {
   votePlacard: id => request(`/placards/${id}/vote`, { method: 'POST' }),
   reportPlacard: id => request(`/placards/${id}/report`, { method: 'POST' }),
   world: () => request('/protests/world', { auth: false }),
-  scene: causeId => request(`/protests/${causeId}/scene`, { auth: false }),
+  scene: causeId => request(`/protests/${causeId}/scene`),
   liveUrl: causeId => `${BASE}/protests/${causeId}/live`,
+  gameState: () => request('/game/state'),
+  collect: () => request('/game/collect', { method: 'POST' }),
+  buyUpgrade: id => request(`/game/upgrades/${id}`, { method: 'POST' }),
+  sendUnits: (causeId, role, count) => request(`/game/fronts/${causeId}/send`, { method: 'POST', body: { role, count } }),
+  recallUnits: (causeId, role, count) => request(`/game/fronts/${causeId}/recall`, { method: 'POST', body: { role, count } }),
+  autoDeploy: () => request('/game/auto-deploy', { method: 'POST' }),
   shop: () => request('/shop'),
   checkout: itemId => request('/shop/checkout', { method: 'POST', body: { itemId } })
 }

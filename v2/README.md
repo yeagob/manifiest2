@@ -7,9 +7,12 @@ Videojuego y red social de manifestaciones: **conecta tu reloj, camina y reparte
 - **Registro seguro**: email + código de verificación, Google opcional, sesiones rotatorias con detección de robo, recuperación, exportación y borrado de cuenta.
 - **Smartwatches**: Fitbit / Pixel Watch, Withings y Garmin por OAuth y webhooks; Apple Watch y Wear OS / Samsung mediante la app móvil compañera con lecturas firmadas Ed25519.
 - **Libro mayor fiel**: varias fuentes sin doble conteo, tope de integridad y el **patrón de reparto** ("de cada 5 pasos: 1 animales, 1 clima, 3 contra la guerra").
-- **Progresión**: XP por pasos y días activos, niveles y capacidad de unidades con bonus de antigüedad.
-- **Unidades únicas**: genoma procedural determinista, 4 rarezas, 8 roles (de manifestante a carroza) y estética *Riso Street*.
-- **Marcha en 3D**: vista mundo y vista avenida, cámaras dron / calle / cabecera, *Vista fiel*, directo con SSE y pancartas votadas.
+- **Juego de gestión incremental** (el Cuartel): Eco, taller de 8 mejoras, necesidad estratégica de cada mani, veteranía de las unidades, hitos con recompensa y despliegue estratégico.
+- **Progresión**: 30 niveles con desbloqueos en cada uno (unidades, mejoras, accesorios y funciones) y 5 unidades ligadas a categorías de causa.
+- **Unidades únicas**: genoma procedural determinista, 4 rarezas y 19 roles (del manifestante al dragón de papel y el mosaico humano), como recortables de papel.
+- **Dirección de arte «Papel y Cartón»** con acentos de Serigrafía para los momentos culminantes.
+- **Mani infinita**: LOD por grupos, traveling de cámara por toda la marcha, sonido procedural espacial por tipo y cantidad de unidades, onomatopeyas, viñetas de cómic, *Vista fiel* y directo por SSE.
+- **Modo foto** con encuadres, horas, filtros (Papel, Riso, Serigrafía, Farolillos), formatos para redes y datos opcionales (causa, fecha, personas que la apoyan).
 - **Tienda solidaria** solo estética con Stripe, para cubrir servidores sin vender poder.
 
 ## Arranque rápido
@@ -23,7 +26,7 @@ npm run dev:web
 npm run seed -w @manifiest/server
 ```
 
-Abre `http://localhost:5173` y entra con `demo3@manifiest.local` / `manifiesto-demo-2026`. Detalles en [Despliegue](docs/13-despliegue.md).
+Abre `http://localhost:5173` y entra con `demo0@manifiest.local` (nivel 30) o `demo30@manifiest.local` (principiante), contraseña `manifiesto-demo-2026`. Detalles en [Despliegue](docs/13-despliegue.md).
 
 ## Estructura
 
@@ -56,6 +59,10 @@ v2/
 | 13 | [Desarrollo y despliegue](docs/13-despliegue.md) | Entorno, Docker, producción, escalado |
 | 14 | [App móvil compañera](docs/14-app-movil.md) | HealthKit, Health Connect, compilación |
 | 15 | [Hoja de ruta](docs/15-hoja-de-ruta.md) | Próximos pasos |
+| 16 | [Dirección de arte](docs/16-direccion-de-arte.md) | «Papel y Cartón» + Serigrafía: materiales, color, tipografía, componentes, mundo, momentos culminantes |
+| 17 | [Juego de gestión e incremental](docs/17-juego-de-gestion.md) | Recursos, Eco, necesidad estratégica, taller, unidades, veteranía, hitos |
+| 18 | [Progresión y UX por niveles](docs/18-progresion-ux.md) | Curva, desbloqueos nivel a nivel, viaje del jugador |
+| 19 | [La experiencia de la mani](docs/19-experiencia-de-mani.md) | Bloques, formaciones, LOD, traveling, sonido, viñetas, modo foto |
 
 ## Licencia
 

@@ -16,7 +16,7 @@ Cuanto más caminas y más días vuelves, **más recursos tienes para hacerte ve
 ## Capacidad
 
 ```
-capacidad(nivel, díasActivos) = floor(3 + 1,5·(nivel−1) + 0,1·nivel²) + floor(díasActivos / 30)
+capacidad(nivel, díasActivos) = floor(3 + 1,5·(nivel−1) + 0,1·nivel²) + floor(díasActivos / 30) + Furgoneta
 ```
 
 | Nivel | 1 | 5 | 10 | 20 | 30 |
@@ -27,18 +27,9 @@ El término de **antigüedad** (+1 cada 30 días activos) premia la constancia, 
 
 ## Roles de unidad
 
-| Rol | Coste | Nivel | Figuras en la escena |
-|---|---|---|---|
-| Manifestante | 1 | 1 | 1 |
-| Abanderada | 2 | 3 | 1 (bandera alta) |
-| Batucada | 3 | 5 | 3 |
-| Megáfono | 3 | 7 | 1 |
-| Humo de colores | 4 | 9 | 1 + partículas |
-| Pancarta de cabecera | 6 | 11 | 6 + pancarta gigante con la pancarta más votada |
-| Gigante | 8 | 14 | 1 figura ×2,4 |
-| Carroza | 20 | 20 | 1 carroza |
+Hay 19 roles: 14 por nivel y 5 **unidades de causa** que se desbloquean aportando pasos a una categoría. La tabla completa (capacidad, Eco/h, coste de acuñado, requisitos) está en [17 · Juego de gestión](17-juego-de-gestion.md#unidades-coste-rendimiento-y-veteranía), y la pista nivel a nivel en [18 · Progresión](18-progresion-ux.md).
 
-La suma de costes de tus unidades nunca puede superar tu capacidad (`canMint`).
+La suma de costes de capacidad de tus unidades nunca puede superar tu capacidad (`canMint`), y acuñar cuesta Eco salvo los tres primeros manifestantes.
 
 ## Ciclo de vida
 

@@ -28,7 +28,7 @@ export function serializeCause(row) {
     category: row.category, icon: row.icon, color: row.color, theme: row.theme, status: row.status,
     goalPeople: row.goal_people, deadline: row.deadline, totalSteps: row.total_steps,
     uniquePeople: row.unique_people ?? 0, deployedUnits: row.deployed_units ?? 0,
-    createdBy: row.created_by, createdAt: row.created_at
+    createdAt: row.created_at
   }
 }
 

@@ -29,6 +29,10 @@ La documentación de cada feature y módulo clave está en `v2/docs/`. **Léela 
 | `v2/docs/13-despliegue.md` | Variables de entorno, Docker, scripts |
 | `v2/docs/14-app-movil.md` | `v2/mobile/` |
 | `v2/docs/15-hoja-de-ruta.md` | Para priorizar trabajo |
+| `v2/docs/16-direccion-de-arte.md` | Cualquier cambio visual: estilos, `UnitSVG`, texturas de `web/src/march/`, carteles |
+| `v2/docs/17-juego-de-gestion.md` | `shared/src/economy.js`, `shared/src/units.js`, `server/src/game/`, Cuartel |
+| `v2/docs/18-progresion-ux.md` | `shared/src/progression.js`, desbloqueos, `ProgressTrack`, `LevelUpModal` |
+| `v2/docs/19-experiencia-de-mani.md` | `web/src/march/*`, `web/src/pages/MarchPage.jsx`, `server/src/protests/` |
 
 ## Comandos
 

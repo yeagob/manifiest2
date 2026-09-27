@@ -29,7 +29,7 @@ export default function HomePage() {
           </p>
           <div className="row">
             {profile
-              ? <Link to="/movimiento" className="btn pink">Mi movimiento</Link>
+              ? <Link to="/cuartel" className="btn pink">Mi movimiento</Link>
               : <Link to="/registro" className="btn pink">Únete a la marcha</Link>}
             <Link to="/mundo" className="btn ghost">Ver el mundo en marcha</Link>
           </div>
