@@ -1,0 +1,52 @@
+:root {
+  --paper: #F4EFE6;
+  --paper-2: #EBE4D6;
+  --ink: #1D1B2F;
+  --ink-soft: #4A4760;
+  --pink: #FF48B0;
+  --blue: #0078BF;
+  --yellow: #FFE800;
+  --green: #00A95C;
+  --orange: #FF6C2F;
+  --teal: #00838A;
+  --purple: #765BA7;
+  --red: #FF4C65;
+  --mint: #82D8D5;
+  --sunflower: #FFB511;
+  --navy: #3D5588;
+  --rarity-common: #4A4760;
+  --rarity-rare: #0078BF;
+  --rarity-epic: #765BA7;
+  --rarity-legendary: #FFB511;
+  --surface: #FFFDF8;
+  --line: #1D1B2F;
+  --shadow: 4px 4px 0 var(--ink);
+  --shadow-sm: 2px 2px 0 var(--ink);
+  --radius: 14px;
+  --font-display: 'Anton', 'Impact', sans-serif;
+  --font-ui: 'Bricolage Grotesque', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #16142A;
+    --paper-2: #211E3A;
+    --ink: #F4EFE6;
+    --ink-soft: #B9B4CC;
+    --surface: #1D1B2F;
+    --line: #F4EFE6;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --paper: #16142A;
+  --paper-2: #211E3A;
+  --ink: #F4EFE6;
+  --ink-soft: #B9B4CC;
+  --surface: #1D1B2F;
+  --line: #F4EFE6;
+  color-scheme: dark;
+}

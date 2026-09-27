@@ -1,0 +1,8 @@
+node_modules
+**/node_modules
+web/dist
+mobile
+**/*.db
+**/*.db-*
+.env
+**/.env

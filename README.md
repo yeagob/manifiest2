@@ -1,5 +1,11 @@
 # ✊ Protest Simulator
 
+> **🚀 Manifiest V2 ya está disponible en [`v2/`](v2/README.md)**: registro seguro, integración con smartwatches (Apple Watch, Wear OS, Garmin, Fitbit, Withings), unidades únicas procedurales y marcha en 3D.
+>
+> 📚 **Índice de documentación V2**: [Visión](v2/docs/00-vision.md) · [Arquitectura](v2/docs/01-arquitectura.md) · [Registro](v2/docs/02-registro-y-autenticacion.md) · [Smartwatches](v2/docs/03-relojes.md) · [Libro mayor](v2/docs/04-libro-mayor.md) · [Progresión y unidades](v2/docs/05-progresion-y-unidades.md) · [Estética](v2/docs/06-estetica-y-unidades-unicas.md) · [Visualización](v2/docs/07-visualizacion.md) · [Causas y pancartas](v2/docs/08-causas-y-pancartas.md) · [Monetización](v2/docs/09-monetizacion.md) · [Seguridad](v2/docs/10-seguridad.md) · [Privacidad](v2/docs/11-privacidad.md) · [API](v2/docs/12-api.md) · [Despliegue](v2/docs/13-despliegue.md) · [App móvil](v2/docs/14-app-movil.md) · [Hoja de ruta](v2/docs/15-hoja-de-ruta.md)
+>
+> Lo que sigue documenta el prototipo V1 (`backend/`, `frontend/`).
+
 A multiplayer online prototype that turns your daily steps into support for the causes you believe in. Walk for change, track your impact, and join a global movement of digital activists.
 
 ## 🌟 Features
